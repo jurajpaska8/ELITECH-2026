@@ -152,7 +152,7 @@ The retrieval system is highly configurable, with the primary parameter $K$ defi
     where $R$ is the set of rankings (full-text and semantic), $r(d)$ is the rank of document $d$ in ranking $r$, and $k$ is a constant (typically set to 60) used to mitigate the impact of low-ranked outliers.
 \end{enumerate}
 
-\subsection{Testing and Evaluation Framework}
+\subsection{Testing of search algorithms and Evaluation Framework}
 To validate the effectiveness of our retrieval and fusion logic, we developed a testing suite consisting of five reference queries with predefined "ground truth" playbooks. We evaluate the system's performance using a multi-metric scoring system:
 
 \begin{itemize}
@@ -163,6 +163,33 @@ To validate the effectiveness of our retrieval and fusion logic, we developed a 
 \end{itemize}
 
 By experimentally comparing the performance of the semantic and full-text branches independently against the hybrid configurations, we demonstrate the necessity of the hybrid approach in capturing threats that lack explicit keyword signatures or clear semantic definitions.
+
+\subsection{Testing Models – LLM as Judge}
+
+To identify the most effective models for our multi-agent architecture, we developed a specialized testing framework designed to quantitatively evaluate LLM performance within the cybersecurity domain. The framework is built with a focus on modularity, allowing for the seamless swapping of models via \textit{Ollama}, the adjustment of system prompts, and the toggling of RAG capabilities.
+
+\subsubsection{Testbed Architecture and Configuration}
+The evaluation system utilizes \textit{Dependency Injection} to integrate the hybrid search module defined in previous sections. This allows the testing script to call a standardized interface:
+\begin{verbatim}
+public interface SearchInterface {
+    public Collection<SearchResult> Handle(QueryType UserQuery);
+}
+\end{verbatim}
+By decoupling the search logic from the model evaluation, we can strictly measure how different models utilize the retrieved context. For this study, we evaluated at least three different models in two primary states: (1) \textbf{Plain LLM (Zero-shot)}, where the model relies solely on its internal training data, and (2) \textbf{LLM + RAG}, where the model's prompt is extended with relevant playbook segments retrieved from our database.
+
+\subsubsection{Evaluation Metrics and Agent Roles}
+We define specific success criteria based on the roles within the MIRA architecture:
+\begin{itemize}
+    \item \textbf{Orchestrator Evaluation:} We measure the model's ability to categorize an incident correctly and map the analyst's query to the appropriate worker agent. The metric here is categorization accuracy.
+    \item \textbf{Worker Evaluation (Action Generation):} We assess how much "ground truth" from the security playbooks is reflected in the generated response. This includes testing the model's ability to generalize entities—for example, correctly identifying and replacing a placeholder IP address from a playbook with the specific IP address found in the current incident log to construct a valid command.
+\end{itemize}
+To quantify these qualitative outputs, we utilize mathematical metrics including \textbf{BERTscore} and \textbf{Cosine Similarity} to measure the semantic overlap between the generated output and the reference response.
+
+\subsubsection{LLM as Judge}
+A cornerstone of our evaluation methodology is the \textbf{LLM as Judge} paradigm. Recognizing that traditional metrics like ROUGE or BLEU often fail to capture the technical nuances of security instructions, we utilize a larger, high-capacity LLM to serve as an autonomous arbiter. This "Judge" model evaluates the outputs of the smaller, specialized worker models based on technical accuracy, adherence to the playbook, and logical consistency. 
+
+This approach allows for automated, scalable benchmarking across diverse test cases. While our current implementation focuses on pre-trained models, the framework is designed to collect feedback on these judgments. This feedback loop is intended for future research into weight reflection and potential fine-tuning via Reinforcement Learning from AI Feedback (RLAIF), aimed at optimizing a single model to perform across all specialized worker roles within the multi-agent system.
+
 
 \subsection{Multiagent Orchestration and Task Splitting}
 MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator (Supervisor) receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
