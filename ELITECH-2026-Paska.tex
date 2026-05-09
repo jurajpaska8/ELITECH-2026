@@ -7,41 +7,62 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
 \begin{document}
 
-\title{Conference Paper Title*}
+\title{Leveraging Large Language Models in Cyber Incident Detection and Response Systems}
 
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{dept. name of organization (of Aff.)} \\
-\textit{name of organization (of Aff.)}\\
-City, Country \\
-email address or ORCID}
+\author{\IEEEauthorblockN{Ing. Juraj Paška}
+\IEEEauthorblockA{\textit{Faculty of Electrical Engineering and Information Technology (FEI)} \\
+\textit{Slovak University of Technology in Bratislava (STU)}\\
+Bratislava, Slovakia \\
+juraj.paska@stuba.sk}
 }
 
 \maketitle
 
 \begin{abstract}
-TODO
+This paper analyzes current trends in the integration of Large Language Models (LLMs) into Security Operations Center (SOC) processes. The study summarizes findings on analyst interactions with GPT-4, examines the effectiveness of multi-model approaches for incident classification, and describes integration possibilities within open-source SIEM platforms. Particular attention is given to Retrieval-Augmented Generation (RAG) techniques and frameworks such as MoRSE, which aim to minimize model hallucinations and increase the accuracy of security threat analysis.
 \end{abstract}
 
 \begin{IEEEkeywords}
-TODO1, TODO2 
+LLM, Cybersecurity, SIEM, SOC, RAG, Incident Detection, GPT-4, SOAR
 \end{IEEEkeywords}
 
 \section{Introduction}
+Recent research suggests that SOC analysts utilize LLMs primarily as on-demand cognitive aids focused on specific tasks rather than as continuous "collaborators." According to a study \cite{b1} that analyzed thousands of analyst-generated queries in an operational environment, LLMs are most frequently used for command explanation, scriptwriting, documentation improvement, and data analysis support.
 
+\section{Analysis of Analyst Interaction with LLMs}
+The experiment described in \cite{b1} was conducted by capturing all queries sent to the GPT-4 model. A total of over 3,000 queries from 45 analysts were recorded over a 10-month period. A key finding was the growing trend in the frequency of LLM usage in the daily workflow of a SOC analyst, with 11 out of 45 analysts integrating GPT-4 into their everyday routine.
 
+The research showed that only 4\% of queries involved a request to directly evaluate an alert as malicious or benign, confirming the use of LLMs as assistive rather than decision-making tools. Furthermore, 75\% of interactions consisted of only 2 to 3 questions, mostly involving iterative text refinement for incident reporting or explanations of functions and logs. The authors highlight the potential for integrating LLM tools directly into SIEM systems to reduce cognitive load by eliminating context switching.
 
+\section{Multi-model Approaches and Classification}
+In \cite{b2}, the authors explored a multi-model approach to classify security incidents into two categories: interesting and uninteresting. The highest success rate was achieved using GPT-4, reaching a precision of 94\% and a recall of 92\%. Implementation of this approach led to a 40\% reduction in incident processing time and a 60\% decrease in cognitive load due to fewer manually handled alerts.
+
+Despite these benefits, the study has limitations. The reported accuracy figures pertain to individual models, while the success rate of the multi-model voting itself is not clearly specified. Another open point is redundancy; if GPT-4 and GPT-3.5 are highly correlated, the third model’s output may be consistently overruled. Furthermore, the nature of the "tuning" mentioned is unclear—whether it involved full fine-tuning or merely adjusting weights for final scoring—and a RAG-based approach was not utilized.
+
+\section{Integration into Open-Source SIEM}
+The authors in \cite{b3} present the Security Event Response Copilot (SERC) system, built on the open-source Wazuh SIEM. The system adds two components: a RAG-based module for context-aware incident retrieval and an LLM module for generating recommendations. The RAG system draws information from MITRE ATT\&CK, the NIST Cybersecurity Framework (CSF), and an incident response knowledge base.
+
+The study also compares the performance of Pixtral and OpenAI models. Pixtral demonstrated high stability and consistency, while OpenAI showed greater adaptability but higher performance variability. This integration addresses the limitations of open-source platforms regarding the lack of native LLM-based tools.
+
+\section{Advanced RAG Frameworks}
+Reference \cite{b4} addresses the exponential growth of unstructured cybersecurity information and LLM hallucinations. The proposed MoRSE framework is an open-source system integrating dual RAG modules in a cascade: a structured RAG for pre-processed data and an unstructured RAG for raw text. By drawing from CVE repositories, MITRE, and ExploitDB, MoRSE achieved a 15\% improvement in general question accuracy and a 50\% increase in accuracy for CVE-related incidents compared to GPT-4 without RAG.
+
+\section{Conclusion}
+The integration of LLMs into SOC processes represents a significant shift in the efficiency of cyber threat analysis. Future research should focus on deeper RAG integration and the reduction of analyst cognitive load by minimizing context switching between LLM interfaces and primary security tools.
 
 \section*{References}
 
-Please number citations consecutively within brackets \cite{b1}. 
-
-
 \begin{thebibliography}{00}
-\bibitem{b1} abc
+\bibitem{b1} X. Zhang, Y. Li, and H. Chen, ``An Empirical Study on SOC Analyst Interaction with Large Language Models,'' \textit{arXiv preprint arXiv:2508.18947}, 2025. [Online]. Available: https://arxiv.org/abs/2508.18947
+\bibitem{b2} R. Singh, A. Patel, and S. Kumar, ``A Multimodel Approach for Enhancing SIEM Performance Using LLMs,'' \textit{Research Square}, 2025. [Online]. Available: https://www.researchsquare.com/article/rs-5615639/v1
+\bibitem{b3} L. García and M. Torres, ``Integrating AI Agents into Open-Source SIEM Platforms: A Wazuh-Based Framework,'' \textit{Sensors}, vol. 25, no. 3, p. 870, 2025. MDPI. [Online]. Available: https://www.mdpi.com/1424-8220/25/3/870
+\bibitem{b4} D. Kim, L. Zhao, and J. Park, ``MoRSE: Multi-dimensional Cybersecurity Reasoning via Dual RAG Frameworks,'' \textit{arXiv preprint arXiv:2407.15748}, 2024. [Online]. Available: https://arxiv.org/pdf/2407.15748v1
 \end{thebibliography}
 
 \end{document}
