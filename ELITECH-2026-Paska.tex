@@ -178,31 +178,70 @@ public interface SearchInterface {
 By decoupling the search logic from the model evaluation, we can strictly measure how different models utilize the retrieved context. For this study, we evaluated at least three different models in two primary states: (1) \textbf{Plain LLM (Zero-shot)}, where the model relies solely on its internal training data, and (2) \textbf{LLM + RAG}, where the model's prompt is extended with relevant playbook segments retrieved from our database.
 
 \subsubsection{Evaluation Metrics and Agent Roles}
-We define specific success criteria based on the roles within the MIRA architecture:
+We define specific success criteria based on the three functional sub-agents within the MIRA architecture. To determine the most effective configuration, each underlying model was tested in two states: as a standalone LLM and as an LLM augmented with RAG. The evaluation focuses on the following roles:
 \begin{itemize}
-    \item \textbf{Orchestrator Evaluation:} We measure the model's ability to categorize an incident correctly and map the analyst's query to the appropriate worker agent. The metric here is categorization accuracy.
-    \item \textbf{Worker Evaluation (Action Generation):} We assess how much "ground truth" from the security playbooks is reflected in the generated response. This includes testing the model's ability to generalize entities—for example, correctly identifying and replacing a placeholder IP address from a playbook with the specific IP address found in the current incident log to construct a valid command.
+    \item \textbf{Orchestrator Evaluation:} We measure the model's ability to categorize an incident correctly and map the analyst's query to the appropriate sub-agent (Todo, Action, or Chat). The primary metric is classification accuracy.
+    \item \textbf{Sub-agent Evaluation:}
+    \begin{itemize}
+        \item \textbf{Todo Agent:} Evaluated on its ability to break down complex security incidents into logical, sequential steps based on playbook requirements.
+        \item \textbf{Action Agent:} Assessed on its ability to generate concrete technical commands and generalize entities—for example, correctly identifying and replacing a placeholder IP address from a template with the specific IP found in the incident log.
+        \item \textbf{Chat Agent:} Evaluated on its ability to provide concise, context-aware explanations and maintain a coherent dialogue with the SOC analyst.
+    \end{itemize}
 \end{itemize}
-To quantify these qualitative outputs, we utilize mathematical metrics including \textbf{BERTscore} and \textbf{Cosine Similarity} to measure the semantic overlap between the generated output and the reference response.
+Unlike traditional benchmarks, we do not utilize automated mathematical metrics such as BERTscore or Cosine Similarity, as these often fail to capture the functional correctness required in a security context. Instead, all qualitative outputs are quantified exclusively through the LLM-as-Judge paradigm.
 
 \subsubsection{LLM as Judge}
-A cornerstone of our evaluation methodology is the \textbf{LLM as Judge} paradigm. Recognizing that traditional metrics like ROUGE or BLEU often fail to capture the technical nuances of security instructions, we utilize a larger, high-capacity LLM to serve as an autonomous arbiter. This "Judge" model evaluates the outputs of the smaller, specialized worker models based on technical accuracy, adherence to the playbook, and logical consistency. 
+A cornerstone of our evaluation methodology is the \textbf{LLM as Judge} paradigm, utilizing the \textbf{Ministral-3 (14B)} model as the autonomous arbiter. Recognizing that metrics like ROUGE or BLEU are insufficient for technical security instructions, the Judge model evaluates the outputs of our specialized workers based on technical accuracy, adherence to the retrieved playbook, and logical consistency.
 
-This approach allows for automated, scalable benchmarking across diverse test cases. While our current implementation focuses on pre-trained models, the framework is designed to collect feedback on these judgments. This feedback loop is intended for future research into weight reflection and potential fine-tuning via Reinforcement Learning from AI Feedback (RLAIF), aimed at optimizing a single model to perform across all specialized worker roles within the multi-agent system.
+During the testing phase, we benchmarked several high-performance models for each role:
+\begin{itemize}
+    \item \textbf{Todo Agent:} Evaluated using \textbf{Qwen3 (14B)} with a 40K context window.
+    \item \textbf{Action Agent:} Evaluated using \textbf{Phi-4 (3.8B)} with a 128K context window.
+    \item \textbf{Chat Agent:} Evaluated using \textbf{Llama 3.1 (8B)} with a 128K context window.
+\end{itemize}
+This approach allowed for a scalable comparison of how each model's reasoning capabilities improved when provided with RAG-retrieved context versus their baseline zero-shot performance.
 
+\subsection{Multiagent Orchestration and Task Splitting}
+MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator receives the analyst's query, identifies the intent, and manages the handoff to the specialized worker agents. We define our primary sub-agents as follows:
+\begin{itemize}
+    \item \textbf{Todo Agent:} Responsible for workflow management and the generation of structured task lists (To-Dos) for incident resolution.
+    \item \textbf{Action Agent:} Acts as the technical generator, drafting specific response instructions and commands based on identified playbooks.
+    \item \textbf{Chat Agent:} Serves as the conversational interface, allowing analysts to query the system for context, summaries, or clarification on specific alerts.
+\end{itemize}
+
+This architecture (\ref{fig:architecture-multiagent}) maintains visual and logical separation between agents, allowing for specialized context management. The supervisor ensures that agent outputs are validated before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.95\linewidth]{architecture-multiagent.png}
+    \caption{Multiagent orchestration and task splitting in MIRA.}
+    \label{fig:architecture-multiagent}
+\end{figure}
 
 \subsection{Multiagent Orchestration and Task Splitting}
 MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator (Supervisor) receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
 \begin{itemize}
-    \item \textbf{Expert Agent:} Provides domain-specific knowledge and categorization of incidents.
-    \item \textbf{Action Generator:} Drafts specific response instructions based on identified playbooks.
-    \item \textbf{Action Executor:} Maps instructions to concrete SOC actions and tools.
+    \item \textbf{Chat Agent:} Provides domain-specific knowledge and categorization of incidents.
+    \item \textbf{Todo Agent:} Drafts specific response instructions based on identified playbooks.
+    \item \textbf{Action Agent:} Maps instructions to concrete SOC actions and tools.
 \end{itemize}
 
 This architecture maintains visual and logical separation between agents, allowing for specialized context management using techniques like sliding windows or history summaries. The supervisor ensures that agent outputs are validated against the ground truth before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
 
 \subsection{Infrastructure and CI/CD}
 The development lifecycle is supported by a robust CI/CD pipeline integrated with GitLab. Every merged Pull Request triggers an automated build of a Docker image for the Python application, which is then deployed to the Pyctus infrastructure via SSH. This ensures that the assistant remains up-to-date with the latest research-driven optimizations in search algorithms and model configurations.
+
+\section{Results}
+TODO
+\section{Limitations and Future Work}
+Limitations
+- only LLM as judge. Better model could be used for evaluation. Also cosine similarity and feedback from human analysts could be used to further validate the results.
+- playbooks are vectorized as a whole, not at the level of individual steps. This can lead to irrelevant information being included in the prompt, which may cause hallucinations or confusion for the LLM.
+- evaluation questions were in most cases out of scope of the playbooks, which may have led to lower performance in the zero-shot configuration. This also highlights the importance of RAG in providing relevant context to the LLM.
+- sliding window with appended history is used to manage context, which may not be optimal for all types of queries or incidents. More sophisticated context management techniques could be explored in future work
+- prompt engineering is a critical factor in the performance of the LLM agents, and further optimization of prompts could lead to improved results. This includes experimenting with different prompt structures, instructions, and examples to better guide the LLM's reasoning process.
+- training was not considered, also feedback is not currently used to improve the model's performance over time. Implementing a feedback loop where the system learns from past interactions and outcomes could enhance its accuracy and relevance in future responses.
+- orchestrator (supervisor) now just delegates tasks based on intent classification, but it could be enhanced to perform more complex reasoning (reasoning loops, validations etc..)
 
 \section{Conclusion}
 TODO
