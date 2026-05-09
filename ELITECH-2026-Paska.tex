@@ -132,7 +132,7 @@ The core of the MIRA framework is a Retrieval-Augmented Generation (RAG) pipelin
 
 \begin{itemize}
     \item \textbf{Full-text Search (FT):} This branch focuses on explicit technical identifiers, such as specific CVE IDs, attack categories, or unique security keywords. We implement the \textbf{BM25 (Best Matching 25)} algorithm, which ranks documents based on the appearance frequency of search terms relative to the entire playbook repository.
-    \item \textbf{Semantic Search (SEM):} This branch enables retrieval based on the underlying intent and context of the query. Security playbooks are vectorized in their entirety and stored in an \textit{in-memory} vector database. To calculate the relationship between the query vector and playbook embeddings, we utilize \textbf{cosine similarity}.
+    \item \textbf{Semantic Search (SEM):} This branch enables retrieval based on the underlying intent and context of the query. Security playbooks are vectorized in their entirety with the \texttt{all-MiniLM-L6-v2} embedding model and stored in an \textit{in-memory} vector database. Queries are also vectorized using the same model to ensure consistent similarity scoring. To calculate the relationship between the query vector and playbook embeddings, we utilize \textbf{cosine similarity}.
 \end{itemize}
 
 \subsection{Result Fusion and Configuration}
@@ -231,8 +231,48 @@ This architecture maintains visual and logical separation between agents, allowi
 \subsection{Infrastructure and CI/CD}
 The development lifecycle is supported by a robust CI/CD pipeline integrated with GitLab. Every merged Pull Request triggers an automated build of a Docker image for the Python application, which is then deployed to the Pyctus infrastructure via SSH. This ensures that the assistant remains up-to-date with the latest research-driven optimizations in search algorithms and model configurations.
 
-\section{Results}
-TODO
+\section{Experimental Results and Analysis}
+
+To determine the optimal configuration for the MIRA framework, we conducted a series of benchmarks comparing three Large Language Models—\textbf{Qwen3 (14B)}, \textbf{Llama 3.1 (8B)}, and \textbf{Phi-4 (3.8B)}—across our three specialized agent roles. The evaluation was split into baseline performance (without RAG) and augmented performance (with RAG). The results, summarized in Table \ref{tab:model_results}, highlight the varying impact of retrieval-augmented context on different task types.
+
+\begin{table}[htbp]
+\caption{Average performance scores by Agent and Model (Scale 0.0--1.0)}
+\label{tab:model_results}
+\begin{center}
+\begin{tabular}{|l|l|c|c|}
+\hline
+\textbf{Agent} & \textbf{Model} & \textbf{Without RAG} & \textbf{With RAG} \\
+\hline
+\textbf{Chat Agent} & Qwen3 (14B) & \textbf{0.86} & 0.56 \\
+& Llama 3.1 (8B) & 0.61 & 0.45 \\
+& Phi-4 (3.8B) & 0.58 & 0.63 \\
+\hline
+\textbf{Action Agent} & Llama 3.1 (8B) & 0.00 & \textbf{0.31} \\
+& Phi-4 (3.8B) & 0.02 & 0.25 \\
+& Qwen3 (14B) & 0.00 & 0.17 \\
+\hline
+\textbf{Todo Agent} & Qwen3 (14B) & 0.25 & \textbf{0.32} \\
+& Phi-4 (3.8B) & 0.24 & 0.26 \\
+& Llama 3.1 (8B) & 0.23 & 0.17 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\subsection{Analysis of Findings}
+The experimental data reveals several critical insights regarding the behavior of LLMs in a SOC environment:
+
+\subsubsection{The Necessity of RAG for Technical Tasks}
+For the \textbf{Action Agent}, performance without RAG was negligible, with scores ranging from 0.00 to 0.02. Without access to the specific syntax and parameters defined in the security playbooks, the models consistently failed to produce valid machine-readable JSON or correct technical commands. Upon enabling RAG, the \textbf{Llama 3.1 (8B)} model showed the most significant improvement, reaching a score of 0.31. This confirms that RAG is a mandatory requirement for agents tasked with technical command generation.
+
+\subsubsection{The Verbosity Penalty in Conversational Tasks}
+A surprising trend was observed in the \textbf{Chat Agent} role, particularly with the \textbf{Qwen3} and \textbf{Llama 3.1} models. Both models saw a decrease in performance when RAG was enabled. The reasoning provided by the \textit{Ministral-3} judge indicated a ``verbosity penalty''; the inclusion of retrieved playbook context often led the models to generate responses that were overly detailed or included unnecessary procedural information, drifting away from the directness required in a conversational setting. Only the \textbf{Phi-4 (3.8B)} model managed to improve its chat score with RAG (0.58 to 0.63).
+
+\subsubsection{Model Selection for Production}
+Based on these results, we selected a heterogeneous model strategy to optimize the MIRA framework. \textbf{Qwen3 (14B)} was selected for the \textbf{Todo Agent} due to its superior planning score with RAG (0.32). \textbf{Llama 3.1 (8B)} was identified as the best candidate for the \textbf{Action Agent} based on its technical extraction capabilities. For the \textbf{Chat Agent}, although \textbf{Qwen3} had the highest standalone score, \textbf{Llama 3.1} was selected to maintain a balance between context-awareness and resource efficiency, leveraging its 128K context window for long-term dialogue stability.
+
+\subsection{Qualitative Observations}
+The LLM-as-Judge noted that while RAG significantly improved grounding, models still encountered difficulties with \textit{temporal relevance}. In high-pressure scenarios (e.g., immediate response to a ransomware note), models sometimes prioritized long-term recovery steps over immediate containment actions. This suggests that further refinement of the system prompts is necessary to ensure that the priority of tasks matches the urgency of the security incident.
 \section{Limitations and Future Work}
 Limitations
 - only LLM as judge. Better model could be used for evaluation. Also cosine similarity and feedback from human analysts could be used to further validate the results.
