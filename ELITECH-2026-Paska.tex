@@ -128,24 +128,41 @@ The MIRA framework is built upon a modular infrastructure deployed on the Pyctus
 The system integrates a playbook database consisting of approximately 90 playbooks across various security categories, managed via \textit{MediaWiki} and \textit{Cacao Roaster}. For local model execution and management, \textit{Ollama} is employed, ensuring that sensitive security data can be processed on-premises or within restricted hardware environments.
 
 \subsection{Hybrid Search and RAG Methodology}
-A primary goal of MIRA is to provide a reliable framework for Retrieval-Augmented Generation (RAG). To optimize the retrieval of security playbooks, we implement a hybrid search approach that combines keyword-based full-text search with natural language semantic search. We utilize two primary fusion methods to merge results:
+The core of the MIRA framework is a Retrieval-Augmented Generation (RAG) pipeline that leverages a hybrid search approach to maximize the relevance of retrieved security playbooks. This system distinguishes between two primary search vectors:
+
+\begin{itemize}
+    \item \textbf{Full-text Search (FT):} This branch focuses on explicit technical identifiers, such as specific CVE IDs, attack categories, or unique security keywords. We implement the \textbf{BM25 (Best Matching 25)} algorithm, which ranks documents based on the appearance frequency of search terms relative to the entire playbook repository.
+    \item \textbf{Semantic Search (SEM):} This branch enables retrieval based on the underlying intent and context of the query. Security playbooks are vectorized in their entirety and stored in an \textit{in-memory} vector database. To calculate the relationship between the query vector and playbook embeddings, we utilize \textbf{cosine similarity}.
+\end{itemize}
+
+\subsection{Result Fusion and Configuration}
+The retrieval system is highly configurable, with the primary parameter $K$ defining the total number of returned records. To integrate the results from the FT and SEM branches, we implement three distinct fusion methodologies:
 
 \begin{enumerate}
-    \item \textbf{Weighted Scoring:} A configurable approach where the final score is a linear combination of normalized semantic and full-text scores:
+    \item \textbf{Naive Approach:} A simple division of the parameter $K$ in a fixed ratio (e.g., $K_{FT} = 2, K_{SEM} = 3$). This serves as a baseline to test the impact of each method without complex mathematical merging.
+    \item \textbf{Weighted Average:} Results from both branches are first normalized into the interval $[0, 1]$. The final relevance score is calculated as:
     \begin{equation}
-        FinalScore = (w \cdot NormSemantic) + ((1 - w) \cdot NormFulltext)
+        Score = (W_{SEM} \cdot Norm_{SEM}) + ((1 - W_{SEM}) \cdot Norm_{FT})
     \end{equation}
-    \item \textbf{Reciprocal Rank Fusion (RRF):} A robust method to combine multiple rank lists without requiring score normalization:
+    where $W_{SEM}$ is a configurable weight (defaulting to $0.5$) that balances the influence of semantic context against keyword precision.
+    \item \textbf{Reciprocal Rank Fusion (RRF):} As illustrated in our framework's optimization phase, we utilize RRF to combine the rankings from multiple search algorithms without requiring score normalization. The fused score for a document $d$ within the set of all documents $D$ is calculated as:
     \begin{equation}
-        RRFscore(d) = \frac{1}{k + rank_{FT}(d)} + \frac{1}{k + rank_{SEM}(d)}
+        RRFscore(d \in D) = \sum_{r \in R} \frac{1}{k + r(d)}
     \end{equation}
+    where $R$ is the set of rankings (full-text and semantic), $r(d)$ is the rank of document $d$ in ranking $r$, and $k$ is a constant (typically set to 60) used to mitigate the impact of low-ranked outliers.
 \end{enumerate}
 
-The retrieval performance is evaluated using metrics such as $K-Hit$ rate and Mean Reciprocal Rank (MRR), defined as:
-\begin{equation}
-    MRR = \frac{1}{|Q|} \sum_{i=1}^{|Q|} \frac{1}{rank_i}
-\end{equation}
-where $|Q|$ represents the total number of queries and $rank_i$ is the position of the first relevant playbook for the $i$-th query.
+\subsection{Testing and Evaluation Framework}
+To validate the effectiveness of our retrieval and fusion logic, we developed a testing suite consisting of five reference queries with predefined "ground truth" playbooks. We evaluate the system's performance using a multi-metric scoring system:
+
+\begin{itemize}
+    \item \textbf{Order-based Score:} A scoring system where a retrieved target playbook is assigned points based on its position ($5 - IDX$ for the TOP 5 results).
+    \item \textbf{Hit Rate:} A binary metric indicating whether the desired playbook is present within the top $K$ results.
+    \item \textbf{Precision@K:} The proportion of relevant playbooks found within the top $K$ retrieved items.
+    \item \textbf{Mean Reciprocal Rank (MRR):} The average of the reciprocal ranks of the first relevant playbook, prioritizing configurations that place the correct solution at the top of the list.
+\end{itemize}
+
+By experimentally comparing the performance of the semantic and full-text branches independently against the hybrid configurations, we demonstrate the necessity of the hybrid approach in capturing threats that lack explicit keyword signatures or clear semantic definitions.
 
 \subsection{Multiagent Orchestration and Task Splitting}
 MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator (Supervisor) receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
