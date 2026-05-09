@@ -8,6 +8,13 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+\usepackage[pdftex]{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -204,7 +211,7 @@ MIRA utilizes a "Supervisor" architecture to manage task delegation. In this par
     \item \textbf{Chat Agent:} Serves as the conversational interface, allowing analysts to query the system for context, summaries, or clarification on specific alerts.
 \end{itemize}
 
-This architecture (\ref{fig:architecture-multiagent}) maintains visual and logical separation between agents, allowing for specialized context management. The supervisor ensures that agent outputs are validated before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
+Architecture (Figure \ref{fig:architecture-multiagent}) maintains visual and logical separation between agents, allowing for specialized context management. The supervisor ensures that agent outputs are validated before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
 
 \begin{figure}[ht]
     \centering
@@ -254,20 +261,13 @@ To determine the optimal configuration for the MIRA framework, we conducted a se
 \end{center}
 \end{table}
 
-\subsection{Analysis of Findings}
 The experimental data reveals several critical insights regarding the behavior of LLMs in a SOC environment:
 
-\subsubsection{The Necessity of RAG for Technical Tasks}
+\subsection{The Necessity of RAG for Technical Tasks}
 For the \textbf{Action Agent}, performance without RAG was negligible, with scores ranging from 0.00 to 0.02. Without access to the specific syntax and parameters defined in the security playbooks, the models consistently failed to produce valid machine-readable JSON or correct technical commands. Upon enabling RAG, the \textbf{Llama 3.1 (8B)} model showed the most significant improvement, reaching a score of 0.31. This confirms that RAG is a mandatory requirement for agents tasked with technical command generation.
 
-\subsubsection{The Verbosity Penalty in Conversational Tasks}
+\subsection{The Verbosity Penalty in Conversational Tasks}
 A surprising trend was observed in the \textbf{Chat Agent} role, particularly with the \textbf{Qwen3} and \textbf{Llama 3.1} models. Both models saw a decrease in performance when RAG was enabled. The reasoning provided by the \textit{Mistral-3} judge indicated a ``verbosity penalty''; the inclusion of retrieved playbook context often led the models to generate responses that were overly detailed or included unnecessary procedural information, drifting away from the directness required in a conversational setting. Only the \textbf{Phi-4 (3.8B)} model managed to improve its chat score with RAG (0.58 to 0.63).
-
-\subsubsection{Model Selection for Production}
-Based on these results, we selected a heterogeneous model strategy to optimize the MIRA framework. \textbf{Qwen3 (14B)} was selected for the \textbf{Todo Agent} due to its superior planning score with RAG (0.32). \textbf{Llama 3.1 (8B)} was identified as the best candidate for the \textbf{Action Agent} based on its technical extraction capabilities. For the \textbf{Chat Agent}, although \textbf{Qwen3} had the highest standalone score, \textbf{Llama 3.1} was selected to maintain a balance between context-awareness and resource efficiency, leveraging its 128K context window for long-term dialogue stability.
-
-\subsection{Qualitative Observations}
-The LLM-as-Judge noted that while RAG significantly improved grounding, models still encountered difficulties with \textit{temporal relevance}. In high-pressure scenarios (e.g., immediate response to a ransomware note), models sometimes prioritized long-term recovery steps over immediate containment actions. This suggests that further refinement of the system prompts is necessary to ensure that the priority of tasks matches the urgency of the security incident.
 
 \section{Limitations and Future Work}
 
@@ -307,6 +307,6 @@ Future work will focus on closing the operational feedback loop. By implementing
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
-TODO linky na obrazok a tabulku, skratit text, dopisat ze len uvazujeme o takychto searchoch, nie ze su implementovane
+TODO skratit text, odstranit niektore pojmy, dopisat ze len uvazujeme o takychto searchoch a dopisat aky je aktualne vybraty, nie ze su implementovane
 
 \end{document}
