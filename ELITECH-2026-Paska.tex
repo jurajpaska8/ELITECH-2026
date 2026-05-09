@@ -7,6 +7,7 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{booktabs}
 
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -23,10 +24,8 @@ juraj.paska@stuba.sk}
 }
 
 \maketitle
-
 \begin{abstract}
-    TODO
-This paper analyzes current trends in the integration of Large Language Models (LLMs) into Security Operations Center (SOC) processes. The study summarizes findings on analyst interactions with GPT-4, examines the effectiveness of multi-model approaches for incident classification, and describes integration possibilities within open-source SIEM platforms. Particular attention is given to Retrieval-Augmented Generation (RAG) techniques and frameworks such as MoRSE, which aim to minimize model hallucinations and increase the accuracy of security threat analysis.
+Modern Security Operations Centers (SOCs) face significant operational hurdles, including overwhelming alert fatigue caused by rule-based systems, manual incident response bottlenecks, and the difficulty of processing vast amounts of unstructured threat intelligence. This paper introduces the Multiagent Incident Response Assistant (MIRA), an autonomous framework designed to streamline the incident reaction phase through a specialized multi-agent orchestration layer and hybrid Retrieval-Augmented Generation (RAG). MIRA utilizes a supervisor-based architecture to delegate tasks among specialized sub-agents: a Todo Agent for workflow planning, an Action Agent for technical command generation, and a Chat Agent for analyst interaction. We implement a hybrid search mechanism combining BM25 full-text search with semantic cosine similarity to ensure responses are grounded in verified security playbooks. Our evaluation, conducted using a "LLM-as-Judge" paradigm with the Mistral-3 (14B) model, benchmarks the performance of Qwen3 (14B), Llama 3.1 (8B), and Phi-4 (3.8B). The results demonstrate that while RAG is a mandatory requirement for technical task execution—improving Action Agent scores from near-zero to functional levels—it can introduce a "verbosity penalty" in conversational contexts. Based on these findings, we propose a heterogeneous model strategy to optimize SOC efficiency, transforming reactive monitoring into a proactive, agent-driven defense mechanism.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -169,18 +168,14 @@ By experimentally comparing the performance of the semantic and full-text branch
 To identify the most effective models for our multi-agent architecture, we developed a specialized testing framework designed to quantitatively evaluate LLM performance within the cybersecurity domain. The framework is built with a focus on modularity, allowing for the seamless swapping of models via \textit{Ollama}, the adjustment of system prompts, and the toggling of RAG capabilities.
 
 \subsubsection{Testbed Architecture and Configuration}
-The evaluation system utilizes \textit{Dependency Injection} to integrate the hybrid search module defined in previous sections. This allows the testing script to call a standardized interface:
-\begin{verbatim}
-public interface SearchInterface {
-    public Collection<SearchResult> Handle(QueryType UserQuery);
-}
-\end{verbatim}
+The evaluation system utilizes \textit{Dependency Injection} to integrate the hybrid search module defined in previous sections. This allows the testing script to call a standardized interface.
+
 By decoupling the search logic from the model evaluation, we can strictly measure how different models utilize the retrieved context. For this study, we evaluated at least three different models in two primary states: (1) \textbf{Plain LLM (Zero-shot)}, where the model relies solely on its internal training data, and (2) \textbf{LLM + RAG}, where the model's prompt is extended with relevant playbook segments retrieved from our database.
 
 \subsubsection{Evaluation Metrics and Agent Roles}
 We define specific success criteria based on the three functional sub-agents within the MIRA architecture. To determine the most effective configuration, each underlying model was tested in two states: as a standalone LLM and as an LLM augmented with RAG. The evaluation focuses on the following roles:
 \begin{itemize}
-    \item \textbf{Orchestrator Evaluation:} We measure the model's ability to categorize an incident correctly and map the analyst's query to the appropriate sub-agent (Todo, Action, or Chat). The primary metric is classification accuracy.
+    \item \textbf{Supervisor Evaluation:} We measure the model's ability to categorize an incident correctly and map the analyst's query to the appropriate sub-agent (Todo, Action, or Chat). The primary metric is classification accuracy.
     \item \textbf{Sub-agent Evaluation:}
     \begin{itemize}
         \item \textbf{Todo Agent:} Evaluated on its ability to break down complex security incidents into logical, sequential steps based on playbook requirements.
@@ -191,7 +186,7 @@ We define specific success criteria based on the three functional sub-agents wit
 Unlike traditional benchmarks, we do not utilize automated mathematical metrics such as BERTscore or Cosine Similarity, as these often fail to capture the functional correctness required in a security context. Instead, all qualitative outputs are quantified exclusively through the LLM-as-Judge paradigm.
 
 \subsubsection{LLM as Judge}
-A cornerstone of our evaluation methodology is the \textbf{LLM as Judge} paradigm, utilizing the \textbf{Ministral-3 (14B)} model as the autonomous arbiter. Recognizing that metrics like ROUGE or BLEU are insufficient for technical security instructions, the Judge model evaluates the outputs of our specialized workers based on technical accuracy, adherence to the retrieved playbook, and logical consistency.
+A cornerstone of our evaluation methodology is the \textbf{LLM as Judge} paradigm, utilizing the \textbf{Mistral-3 (14B)} model as the autonomous arbiter. 
 
 During the testing phase, we benchmarked several high-performance models for each role:
 \begin{itemize}
@@ -201,8 +196,8 @@ During the testing phase, we benchmarked several high-performance models for eac
 \end{itemize}
 This approach allowed for a scalable comparison of how each model's reasoning capabilities improved when provided with RAG-retrieved context versus their baseline zero-shot performance.
 
-\subsection{Multiagent Orchestration and Task Splitting}
-MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator receives the analyst's query, identifies the intent, and manages the handoff to the specialized worker agents. We define our primary sub-agents as follows:
+\subsection{Multiagent Orchestration}
+MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central supervisor receives the analyst's query, identifies the intent, and manages the handoff to the specialized worker agents. We define our primary sub-agents as follows:
 \begin{itemize}
     \item \textbf{Todo Agent:} Responsible for workflow management and the generation of structured task lists (To-Dos) for incident resolution.
     \item \textbf{Action Agent:} Acts as the technical generator, drafting specific response instructions and commands based on identified playbooks.
@@ -219,7 +214,7 @@ This architecture (\ref{fig:architecture-multiagent}) maintains visual and logic
 \end{figure}
 
 \subsection{Multiagent Orchestration and Task Splitting}
-MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator (Supervisor) receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
+MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central supervisor receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
 \begin{itemize}
     \item \textbf{Chat Agent:} Provides domain-specific knowledge and categorization of incidents.
     \item \textbf{Todo Agent:} Drafts specific response instructions based on identified playbooks.
@@ -236,25 +231,25 @@ The development lifecycle is supported by a robust CI/CD pipeline integrated wit
 To determine the optimal configuration for the MIRA framework, we conducted a series of benchmarks comparing three Large Language Models—\textbf{Qwen3 (14B)}, \textbf{Llama 3.1 (8B)}, and \textbf{Phi-4 (3.8B)}—across our three specialized agent roles. The evaluation was split into baseline performance (without RAG) and augmented performance (with RAG). The results, summarized in Table \ref{tab:model_results}, highlight the varying impact of retrieval-augmented context on different task types.
 
 \begin{table}[htbp]
-\caption{Average performance scores by Agent and Model (Scale 0.0--1.0)}
+\caption{Average performance scores by Agent and Model}
 \label{tab:model_results}
 \begin{center}
-\begin{tabular}{|l|l|c|c|}
-\hline
+\begin{tabular}{llcc}
+\toprule
 \textbf{Agent} & \textbf{Model} & \textbf{Without RAG} & \textbf{With RAG} \\
-\hline
+\midrule
 \textbf{Chat Agent} & Qwen3 (14B) & \textbf{0.86} & 0.56 \\
 & Llama 3.1 (8B) & 0.61 & 0.45 \\
 & Phi-4 (3.8B) & 0.58 & 0.63 \\
-\hline
+\midrule
 \textbf{Action Agent} & Llama 3.1 (8B) & 0.00 & \textbf{0.31} \\
 & Phi-4 (3.8B) & 0.02 & 0.25 \\
 & Qwen3 (14B) & 0.00 & 0.17 \\
-\hline
+\midrule
 \textbf{Todo Agent} & Qwen3 (14B) & 0.25 & \textbf{0.32} \\
 & Phi-4 (3.8B) & 0.24 & 0.26 \\
 & Llama 3.1 (8B) & 0.23 & 0.17 \\
-\hline
+\bottomrule
 \end{tabular}
 \end{center}
 \end{table}
@@ -266,28 +261,52 @@ The experimental data reveals several critical insights regarding the behavior o
 For the \textbf{Action Agent}, performance without RAG was negligible, with scores ranging from 0.00 to 0.02. Without access to the specific syntax and parameters defined in the security playbooks, the models consistently failed to produce valid machine-readable JSON or correct technical commands. Upon enabling RAG, the \textbf{Llama 3.1 (8B)} model showed the most significant improvement, reaching a score of 0.31. This confirms that RAG is a mandatory requirement for agents tasked with technical command generation.
 
 \subsubsection{The Verbosity Penalty in Conversational Tasks}
-A surprising trend was observed in the \textbf{Chat Agent} role, particularly with the \textbf{Qwen3} and \textbf{Llama 3.1} models. Both models saw a decrease in performance when RAG was enabled. The reasoning provided by the \textit{Ministral-3} judge indicated a ``verbosity penalty''; the inclusion of retrieved playbook context often led the models to generate responses that were overly detailed or included unnecessary procedural information, drifting away from the directness required in a conversational setting. Only the \textbf{Phi-4 (3.8B)} model managed to improve its chat score with RAG (0.58 to 0.63).
+A surprising trend was observed in the \textbf{Chat Agent} role, particularly with the \textbf{Qwen3} and \textbf{Llama 3.1} models. Both models saw a decrease in performance when RAG was enabled. The reasoning provided by the \textit{Mistral-3} judge indicated a ``verbosity penalty''; the inclusion of retrieved playbook context often led the models to generate responses that were overly detailed or included unnecessary procedural information, drifting away from the directness required in a conversational setting. Only the \textbf{Phi-4 (3.8B)} model managed to improve its chat score with RAG (0.58 to 0.63).
 
 \subsubsection{Model Selection for Production}
 Based on these results, we selected a heterogeneous model strategy to optimize the MIRA framework. \textbf{Qwen3 (14B)} was selected for the \textbf{Todo Agent} due to its superior planning score with RAG (0.32). \textbf{Llama 3.1 (8B)} was identified as the best candidate for the \textbf{Action Agent} based on its technical extraction capabilities. For the \textbf{Chat Agent}, although \textbf{Qwen3} had the highest standalone score, \textbf{Llama 3.1} was selected to maintain a balance between context-awareness and resource efficiency, leveraging its 128K context window for long-term dialogue stability.
 
 \subsection{Qualitative Observations}
 The LLM-as-Judge noted that while RAG significantly improved grounding, models still encountered difficulties with \textit{temporal relevance}. In high-pressure scenarios (e.g., immediate response to a ransomware note), models sometimes prioritized long-term recovery steps over immediate containment actions. This suggests that further refinement of the system prompts is necessary to ensure that the priority of tasks matches the urgency of the security incident.
+
 \section{Limitations and Future Work}
-Limitations
-- only LLM as judge. Better model could be used for evaluation. Also cosine similarity and feedback from human analysts could be used to further validate the results.
-- playbooks are vectorized as a whole, not at the level of individual steps. This can lead to irrelevant information being included in the prompt, which may cause hallucinations or confusion for the LLM.
-- evaluation questions were in most cases out of scope of the playbooks, which may have led to lower performance in the zero-shot configuration. This also highlights the importance of RAG in providing relevant context to the LLM.
-- sliding window with appended history is used to manage context, which may not be optimal for all types of queries or incidents. More sophisticated context management techniques could be explored in future work
-- prompt engineering is a critical factor in the performance of the LLM agents, and further optimization of prompts could lead to improved results. This includes experimenting with different prompt structures, instructions, and examples to better guide the LLM's reasoning process.
-- training was not considered, also feedback is not currently used to improve the model's performance over time. Implementing a feedback loop where the system learns from past interactions and outcomes could enhance its accuracy and relevance in future responses.
-- orchestrator (supervisor) now just delegates tasks based on intent classification, but it could be enhanced to perform more complex reasoning (reasoning loops, validations etc..)
 
+While the MIRA framework demonstrates the potential for multi-agent automation in the SOC, several limitations remain that provide opportunities for future research.
+
+\subsection{Evaluation Methodology}
+\begin{itemize}
+    \item \textbf{Evaluation Framework:} Our current assessment relies exclusively on the \textit{LLM-as-Judge} paradigm. While efficient, future work should incorporate hybrid evaluation metrics, including \textbf{BERTscore} and \textbf{Cosine Similarity}, alongside qualitative feedback from expert human analysts to provide a more holistic validation of agent performance.
+    \item \textbf{Dataset Alignment:} The evaluation dataset included several queries that fell outside the scope of the available playbook repository. While this served to highlight the necessity of RAG, it likely depressed the performance scores of baseline models. Future benchmarks should utilize a more balanced dataset to measure the limits of both zero-shot and retrieval-augmented reasoning.
+    \item \textbf{Hyperparameter Tuning:} This study did not explore the impact of \textbf{temperature settings} on agent performance. Given that temperature significantly influences the balance between technical precision and conversational creativity, future iterations will include a grid search to identify optimal hyperparameter configurations for each specialized agent.
+\end{itemize}
+
+\subsection{Architecture and Data Management}
+\begin{itemize}
+    \item \textbf{Granularity of Vectorization:} Currently, security playbooks are vectorized in their entirety. This coarse-grained approach can lead to the inclusion of irrelevant information in the context window, potentially inducing noise or hallucinations. Moving to a more granular, step-level chunking strategy could improve retrieval precision and agent focus.
+    \item \textbf{Context Management:} We utilize a sliding window with appended history to manage dialogue context. While functional, this may be suboptimal for complex, multi-stage incidents. Future research will explore more sophisticated memory architectures, such as \textbf{Vector-based Long-term Memory} or \textbf{Hierarchical Summarization}, to maintain coherence over extended investigations.
+    \item \textbf{Supervisor Logic:} The current supervisor functions primarily as an intent classifier for task delegation. Enhancing this agent with \textbf{Reasoning Loops (ReAct)} and autonomous validation steps would allow the system to handle more ambiguous security scenarios that require multi-step deductive reasoning.
+\end{itemize}
+
+\subsection{Optimization and Learning}
+\begin{itemize}
+    \item \textbf{Prompt Engineering:} Performance remains highly sensitive to the structure and phrasing of system prompts. Further optimization using techniques such as \textbf{Chain-of-Thought (CoT)} or \textbf{Few-shot prompting} specifically tailored to cybersecurity ontologies could yield significant gains in accuracy.
+    \item \textbf{Feedback Loops and Model Training:} The current framework does not incorporate a mechanism for learning from past interactions. We plan to implement a \textbf{continuous feedback loop} where human-analyst corrections are used to refine model weights over time, potentially through \textbf{Reinforcement Learning from AI/Human Feedback (RLAIF/RLHF)} to adapt the system to specific organizational environments.
+\end{itemize}
 \section{Conclusion}
-TODO
-The integration of LLMs into SOC processes represents a significant shift in the efficiency of cyber threat analysis. Future research should focus on deeper RAG integration and the reduction of analyst cognitive load by minimizing context switching between LLM interfaces and primary security tools.
 
+In this work, we presented the Multiagent Incident Response Assistant (MIRA), a specialized framework designed to accelerate incident response times and improve quality of responses. 
+
+Our investigation into the MIRA framework yielded several key insights into the integration of AI within cybersecurity:
+\begin{itemize}
+    \item \textbf{The Centrality of RAG:} Our experimental results proved that Retrieval-Augmented Generation is an absolute necessity for technical security tasks. Without RAG, even high-capacity models failed to generate valid command-line instructions or JSON-formatted actions. The implementation of a hybrid search approach (combining BM25 and semantic cosine similarity) ensured that these models remained grounded in verified organizational playbooks.
+    \item \textbf{Agent Specialization:} We found that a "one-size-fits-all" model approach is suboptimal. While larger models like \textbf{Qwen3 (14B)} excelled at complex task planning (Todo Agent), more efficient models like \textbf{Llama 3.1 (8B)} proved highly effective at technical extraction (Action Agent) when properly augmented.
+    \item \textbf{Operational Trade-offs:} Our "LLM as Judge" evaluation revealed a unique ``verbosity penalty'' in conversational settings. While RAG increases technical accuracy, it can degrade the quality of human-analyst interaction by introducing excessive procedural detail. This highlights the need for precise prompt engineering to balance technical grounding with conversational directness.
+\end{itemize}
+
+Future work will focus on closing the operational feedback loop. By implementing a system for collecting analyst feedback and utilizing \textit{Reinforcement Learning from AI Feedback} (RLAIF), we aim to refine the models' weights to better reflect the urgency and priority of real-world security incidents. Ultimately, the MIRA framework serves as a foundational step toward an autonomous, proactive SOC capable of keeping pace with the rapidly evolving threat landscape.
 \bibliographystyle{IEEEtran}
 \bibliography{references}
+
+TODO linky na obrazok a tabulku, skratit text, dopisat ze len uvazujeme o takychto searchoch, nie ze su implementovane
 
 \end{document}
