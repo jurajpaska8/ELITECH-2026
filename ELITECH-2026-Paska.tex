@@ -25,6 +25,7 @@ juraj.paska@stuba.sk}
 \maketitle
 
 \begin{abstract}
+    TODO
 This paper analyzes current trends in the integration of Large Language Models (LLMs) into Security Operations Center (SOC) processes. The study summarizes findings on analyst interactions with GPT-4, examines the effectiveness of multi-model approaches for incident classification, and describes integration possibilities within open-source SIEM platforms. Particular attention is given to Retrieval-Augmented Generation (RAG) techniques and frameworks such as MoRSE, which aim to minimize model hallucinations and increase the accuracy of security threat analysis.
 \end{abstract}
 
@@ -117,9 +118,50 @@ As cyberattacks become increasingly multi-vector and stealthy, isolated detectio
 
 The core innovation of this architecture lies in its ability to synthesize disparate proofs from individual agents into a coherent attack narrative. By cross-analyzing signals (e.g., correlating a suspicious phishing email with subsequent lateral movement in server logs), the system can detect complex threat patterns that evade standalone sensors. Experimental results on benchmark datasets, including CIC-IDS 2017 and SpamAssassin, demonstrate a high detection accuracy of 93.6\% and a 41.3\% reduction in false positives compared to traditional rule-based methods. Furthermore, the use of LLM-based Chain-of-Thought (CoT) reporting provides explicable insights for security analysts, significantly reducing triage time and increasing confidence in the system's automated recommendations.
 
-\section{Our work - MIRA}
+\section{Our work - Multiagent incident response automation}
+
+To address the inherent limitations of modern Security Operations Centers (SOC), we propose the Multiagent Incident Response Assistant (MIRA). MIRA is designed as an autonomous framework to assist analysts during the incident reaction phase by leveraging specialized Large Language Model (LLM) agents and advanced retrieval techniques.
+
+\subsection{System Architecture and Tech Stack}
+The MIRA framework is built upon a modular infrastructure deployed on the Pyctus environment. The core orchestration is handled via \textit{LangGraph}, which enables a multiagent architecture, while \textit{Chainlit} provides the user interface for human-operator interaction. The backend is powered by \textit{Django} and \textit{PostgreSQL}, the latter specifically utilized for storing embeddings and performing vector operations such as cosine similarity. 
+
+The system integrates a playbook database consisting of approximately 90 playbooks across various security categories, managed via \textit{MediaWiki} and \textit{Cacao Roaster}. For local model execution and management, \textit{Ollama} is employed, ensuring that sensitive security data can be processed on-premises or within restricted hardware environments.
+
+\subsection{Hybrid Search and RAG Methodology}
+A primary goal of MIRA is to provide a reliable framework for Retrieval-Augmented Generation (RAG). To optimize the retrieval of security playbooks, we implement a hybrid search approach that combines keyword-based full-text search with natural language semantic search. We utilize two primary fusion methods to merge results:
+
+\begin{enumerate}
+    \item \textbf{Weighted Scoring:} A configurable approach where the final score is a linear combination of normalized semantic and full-text scores:
+    \begin{equation}
+        FinalScore = (w \cdot NormSemantic) + ((1 - w) \cdot NormFulltext)
+    \end{equation}
+    \item \textbf{Reciprocal Rank Fusion (RRF):} A robust method to combine multiple rank lists without requiring score normalization:
+    \begin{equation}
+        RRFscore(d) = \frac{1}{k + rank_{FT}(d)} + \frac{1}{k + rank_{SEM}(d)}
+    \end{equation}
+\end{enumerate}
+
+The retrieval performance is evaluated using metrics such as $K-Hit$ rate and Mean Reciprocal Rank (MRR), defined as:
+\begin{equation}
+    MRR = \frac{1}{|Q|} \sum_{i=1}^{|Q|} \frac{1}{rank_i}
+\end{equation}
+where $|Q|$ represents the total number of queries and $rank_i$ is the position of the first relevant playbook for the $i$-th query.
+
+\subsection{Multiagent Orchestration and Task Splitting}
+MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central orchestrator (Supervisor) receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
+\begin{itemize}
+    \item \textbf{Expert Agent:} Provides domain-specific knowledge and categorization of incidents.
+    \item \textbf{Action Generator:} Drafts specific response instructions based on identified playbooks.
+    \item \textbf{Action Executor:} Maps instructions to concrete SOC actions and tools.
+\end{itemize}
+
+This architecture maintains visual and logical separation between agents, allowing for specialized context management using techniques like sliding windows or history summaries. The supervisor ensures that agent outputs are validated against the ground truth before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
+
+\subsection{Infrastructure and CI/CD}
+The development lifecycle is supported by a robust CI/CD pipeline integrated with GitLab. Every merged Pull Request triggers an automated build of a Docker image for the Python application, which is then deployed to the Pyctus infrastructure via SSH. This ensures that the assistant remains up-to-date with the latest research-driven optimizations in search algorithms and model configurations.
 
 \section{Conclusion}
+TODO
 The integration of LLMs into SOC processes represents a significant shift in the efficiency of cyber threat analysis. Future research should focus on deeper RAG integration and the reduction of analyst cognitive load by minimizing context switching between LLM interfaces and primary security tools.
 
 \section*{References}
