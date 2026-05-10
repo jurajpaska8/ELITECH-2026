@@ -475,9 +475,18 @@ Our investigation into the MIRA framework yielded several insights into the inte
     \item \textbf{Threshold for RAG:} Results showed especially bad performance for questions, which were not grounded in our dataset. In these scenarios was also our system prompt augmented with context outside of scope of question and degraded quality of final answer. This fact needs to be considered in fugure work. 
 \end{itemize}
 
-Future work will focus limitations described in Section\ref{sec:limitations}.
+Future work will focus limitations described in Section \ref{sec:limitations}.
+
+\appendices
+\section{Supplementary Material: LLM Validation Results}
+\label{app:validation_results}
+Detailed validation criteria and raw evaluation results for the tested agents are provided in the supplementary material file (\texttt{llm\_validation\_results.xlsx}). This supplementary dataset contains six sheets detailing the exact evaluation criteria, agent interactions, and performance metrics used during the benchmarking phase, split by agent and RAG configuration:
+\begin{itemize}
+    \item \textbf{Action Agent Validation}: Criteria and outcomes for baseline performance (without RAG) and augmented performance (with RAG).
+    \item \textbf{Todo Agent Validation}: Criteria and outcomes for baseline performance (without RAG) and augmented performance (with RAG).
+    \item \textbf{Chat Agent Validation}: Criteria and outcomes for baseline performance (without RAG) and augmented performance (with RAG).
+\end{itemize}
 \bibliographystyle{IEEEtran}
 \bibliography{references}
-% TODO add example for benchmark test - fail in chat, success in action, evaluation criteria - add prompt
-
+ 
 \end{document}
