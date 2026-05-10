@@ -35,10 +35,12 @@ juraj.paska@stuba.sk}
 Modern Security Operations Centers (SOCs) face significant operational hurdles, including overwhelming alert fatigue caused by rule-based systems, manual incident response bottlenecks, and the difficulty of processing vast amounts of unstructured threat intelligence. 
 
 This paper investigates the potential of Large Language Models (LLMs) in cyber incident detection and response systems.
-This paper also presents an implementation of Multiagent Incident Response Assistant (MIRA), a framework designed to streamline the incident reaction phase through a specialized multi-agent orchestration layer and hybrid Retrieval-Augmented Generation (RAG). MIRA utilizes a supervisor-based architecture to delegate tasks among specialized sub-agents: a Todo Agent for workflow planning, an Action Agent for technical command generation, and a Chat Agent for analyst interaction. 
+This paper also presents an implementation of Multiagent Incident Response Assistant (MIRA), 
+a framework designed to streamline the incident reaction phase through a specialized multi-agent orchestration layer and hybrid Retrieval-Augmented Generation (RAG). 
+MIRA utilizes a supervisor-based architecture to delegate tasks among specialized sub-agents: a Todo Agent for workflow planning, an Action Agent for technical command generation, and a Chat Agent for analyst interaction. 
 We implement a hybrid search mechanism combining BM25 full-text search with semantic cosine similarity to ensure responses are grounded in verified security playbooks. 
 
-Our evaluation is conducted using a "LLM-as-Judge" paradigm with the Mistral-3 (14B) model, benchmarks the performance of Qwen3 (14B), Llama 3.1 (8B), and Phi-4 (3.8B). 
+Our evaluation is uses a "LLM-as-Judge" approach with the Mistral-3 (14B) model, benchmarks the performance of Qwen3 (14B), Llama 3.1 (8B), and Phi-4 (3.8B) for three types of tasks. 
 Results show potential of RAG in technical tasks but also limitations in conversational tasks due to verbosity caused by long and unstructured playbooks retrieved from memory.   
 \end{abstract}
 
@@ -75,90 +77,187 @@ Section \ref{sec:mira} presents the architecture and methodology of our proposed
 Section \ref{sec:results} details our experimental evaluation and results. Section \ref{sec:limitations} discusses current limitations and potential for future research. Section \ref{sec:conclusion} provides concluding remarks.
 
 \section{Analysis of Analyst Interaction with LLMs}\label{sec:empirical}
-Recent research suggests that SOC analysts utilize LLMs primarily as on-demand cognitive aids focused on specific tasks rather than as continuous "collaborators." According to a study \cite{b1} that analyzed thousands of analyst-generated queries in an operational environment, LLMs are most frequently used for command explanation, scriptwriting, documentation improvement, and data analysis support.
+Recent research suggests that SOC analysts uses LLMs primarily as support tool rather than as autonomous experts.
+According to a study \cite{b1} that analyzed thousands of analyst-generated queries in an operational environment, 
+LLMs are most frequently used for command explanation, scriptwriting, documentation improvement, and data analysis support.
 
-The experiment described in \cite{b1} was conducted by capturing all queries sent to the GPT-4 model. A total of over 3,000 queries from 45 analysts were recorded over a 10-month period. A key finding was the growing trend in the frequency of LLM usage in the daily workflow of a SOC analyst, with 11 out of 45 analysts integrating GPT-4 into their everyday routine.
+The experiment described in \cite{b1} was conducted by capturing all queries sent to the GPT-4 model. 
+A total of over 3,000 queries from 45 analysts were recorded over a 10-month period. 
+A key finding was the growing trend in the frequency of LLM usage in the daily workflow of a SOC analyst, 
+with 11 out of 45 analysts integrating GPT-4 into their everyday routine.
 
-The research showed that only 4\% of queries involved a request to directly evaluate an alert as malicious or benign, confirming the use of LLMs as assistive rather than decision-making tools. Furthermore, 75\% of interactions consisted of only 2 to 3 questions, mostly involving iterative text refinement for incident reporting or explanations of functions and logs. The authors highlight the potential for integrating LLM tools directly into SIEM systems to reduce cognitive load by eliminating context switching.
+The research showed that only 4\% of queries involved a request to directly evaluate an alert as malicious or benign, 
+confirming the use of LLMs as assistive rather than decision-making tools. 
+Furthermore, 75\% of interactions consisted of only 2 to 3 questions, 
+mostly involving iterative text refinement for incident reporting or explanations of functions and logs. 
+The authors highlight the potential for integrating LLM tools directly into SIEM systems 
+to reduce cognitive load by eliminating context switching.
 
-\section{Multi-model Approaches and Classification}\label{sec:siem_start}
-In \cite{b2}, the authors explored a multi-model approach to classify security incidents into two categories: interesting and uninteresting. The highest success rate was achieved using GPT-4, reaching a precision of 94\% and a recall of 92\%. Implementation of this approach led to a 40\% reduction in incident processing time and a 60\% decrease in cognitive load due to fewer manually handled alerts.
+\section{Multi-model Approaches and Classification for reducing false positives}\label{sec:siem_start}
+In \cite{b2}, the authors explored a multi-model approach to classify security incidents into two categories: 
+interesting and uninteresting, where interesting alerts are supposed to be evaluated by SOC operator and uniteresting alerts are marked as false positives.
+The highest success rate was achieved using GPT-4, reaching a precision of 94\% and a recall of 92\%. 
+According to the authors, implementation of this approach led to a 40\% reduction in incident processing time 
+and a 60\% decrease in cognitive load due to fewer manually handled alerts.
 
-The experimental framework proposed by the researchers consists of a modular architecture featuring an Alert Generation Module, an LLM Agent, and a Reporting Module. This system was integrated into an environment utilizing the Wazuh SIEM platform, where CALDERA was employed for adversary emulation to generate realistic attack scenarios. This setup allowed for a comparative benchmark between five distinct models: GPT-4, GPT-3.5, LLaMA 3, Mixtral 8x22B, and OpenHermes 2.5 Mistral 7B. The inclusion of open-source models like LLaMA and Mixtral was intended to address critical privacy risks and data sovereignty concerns associated with processing sensitive SOC data through external APIs.
+The experimental framework proposed by the researchers consists of a modular architecture featuring an Alert Generation Module, 
+an LLM Agent, and a Reporting Module. This system was integrated into an environment utilizing the Wazuh SIEM platform, 
+where CALDERA was employed for adversary emulation to generate realistic attack scenarios. 
+This setup allowed for a comparative benchmark between five distinct models: GPT-4, GPT-3.5, LLaMA 3, Mixtral 8x22B, and OpenHermes 2.5 Mistral 7B. 
+The inclusion of open-source models like LLaMA and Mixtral was intended to address critical privacy risks and data sovereignty concerns associated with processing sensitive SOC data through external APIs.
 
-Despite the strong performance metrics of the proprietary models, the study highlights a significant operational hurdle: a hallucination rate of approximately 5\% during the analysis of security events. While GPT-4 remained the top performer with an F1-score of 93\%, the open-source alternatives demonstrated varying degrees of efficacy, trailing behind in complex classification tasks. This performance gap underscores the challenge of balancing model accessibility and privacy with the high accuracy required for autonomous alert triage.
+Despite the strong performance metrics of the proprietary models, the study highlights a significant operational hurdle: 
+a hallucination rate of approximately 5\% during the analysis of security events.
+While GPT-4 remained the top performer with an F1-score of 93\%, the open-source alternatives demonstrated varying degrees of efficacy, trailing behind in complex classification tasks. 
+This performance gap underscores the challenge of balancing model accessibility and privacy with the high accuracy required for autonomous alert triage.
 
-To address these limitations, the authors advocate for a hybrid "co-pilot" strategy where LLMs act alongside human analysts. They propose further research into prompt optimization, model transparency, and bias detection to improve the reliability of the system. While the current iteration of the framework focuses on weighted outputs and scoring, the authors suggest that future developments should integrate continuous learning from large-scale alert training sets to mitigate the issues of redundancy and correlation between the models in the ensemble.
+To address these limitations, the authors advocate for a hybrid "co-pilot" strategy where LLMs act alongside human analysts. 
+They also propose further research into prompt optimization and bias detection to improve the reliability of the system. 
 
-Despite these benefits, the study has limitations. The reported accuracy figures pertain to individual models, while the success rate of the multi-model voting itself is not clearly specified. Another open point is redundancy; if GPT-4 and GPT-3.5 are highly correlated, the third model’s output may be consistently overruled. Furthermore, the nature of the "tuning" mentioned is unclear—whether it involved full fine-tuning or merely adjusting weights for final scoring—and a RAG-based approach was not utilized.
+Despite these benefits, the study has limitations. The reported accuracy figures show performance of individual models, 
+while the success rate of the multi-model voting itself is not clearly specified. 
+Another open point is redundancy; if GPT-4 and GPT-3.5 are highly correlated, the third model’s output may be consistently overruled. 
+Furthermore, the nature of the "tuning" mentioned is unclear—whether it involved full fine-tuning or merely adjusting weights for final scoring—and.
+
 \section{Integration into Open-Source SIEM}
-The authors in \cite{b3} present the Security Event Response Copilot (SERC) system, built on the open-source Wazuh SIEM. The system adds two components: a RAG-based module for context-aware incident retrieval and an LLM module for generating recommendations. The RAG system draws information from MITRE ATT\&CK, the NIST Cybersecurity Framework (CSF), and an incident response knowledge base.
+The authors in \cite{b3} present the Security Event Response Copilot (SERC) system, built on the open-source Wazuh SIEM.
+The system adds two components: a RAG-based module for context-aware incident retrieval and an LLM module for generating recommendations. 
+The RAG system draws information from MITRE ATT\&CK, the NIST Cybersecurity Framework (CSF), and the SOCFortress incident response knowledge base.
 
-The architecture of SERC is designed to bridge the gap between strategic risk management and tactical technical execution. By utilizing three distinct vectorized data collections—the NIST CSF 2.0 for high-level lifecycle management, the MITRE ATT\&CK framework for granular adversary behavior mapping, and the SOCFortress incident response plan for procedural ground truth—the system provides a multi-layered defense. This integration enables the LLM to deliver recommendations that are not only technically accurate in identifying tactics and techniques but also aligned with established organizational security standards.
+The efficacy of the framework was evaluated through an end-to-end simulation using the Atomic Red Team tool to replicate six 
+critical threat categories, including ransomware, malware, and phishing. 
+To assess the quality of the generated responses, the researchers employed multi-faceted metrics such as cosine similarity 
+for semantic alignment and BERTScore for contextual accuracy.
 
-The efficacy of the framework was evaluated through an end-to-end simulation using the Atomic Red Team tool to replicate six critical threat categories, including ransomware, malware, and phishing. To assess the quality of the generated responses, the researchers employed multi-faceted metrics such as cosine similarity for semantic alignment and BERTScore for contextual accuracy. This methodology allowed for a rigorous comparison between the proprietary OpenAI models and the open-source Pixtral model, focusing on their ability to minimize hallucinations—a persistent challenge when using LLMs in the SOC space.
-
-The study also compares the performance of Pixtral and OpenAI models. Pixtral demonstrated high stability and consistency, while OpenAI showed greater adaptability but higher performance variability. Specifically, Pixtral consistently achieved higher precision and F1-scores (ranging between 85.4\% and 87.2\%) across diverse attack scenarios, reflecting its reliability in capturing relevant information without significant fluctuations. In contrast, while the OpenAI model peaked at higher semantic alignment (75.81\% cosine similarity in certain cases), it exhibited more pronounced performance dips, suggesting that Pixtral may be a more stable candidate for consistent automated triage in open-source SIEM environments.
+The study compares the performance of Pixtral and OpenAI models. Pixtral demonstrated high stability and consistency accross all types of incidents,
+while OpenAI showed greater adaptability but higher performance variability. 
+Pixtral consistently achieved higher precision and F1-scores (ranging between 85.4\% and 87.2\%) across diverse attack scenarios, reflecting its reliability in capturing relevant information without significant fluctuations. 
+In contrast, while the OpenAI model peaked at higher semantic alignment (75.81\% cosine similarity in certain cases), 
+it exhibited performance dips, suggesting that Pixtral may be a more stable candidate for consistent automated triage in open-source SIEM environments.
 
 \section{Predictive Threat Intelligence Models}
-Reference \cite{b8} investigates the integration of LLMs to overcome the limitations of static, signature-based detection systems that frequently struggle with zero-day exploits and polymorphic threats. The authors introduce the Predictive Threat Intelligence Model (PTIM), a framework trained on approximately 100 million security-related data points, including network logs and public threat databases. By utilizing the bidirectional context awareness inherent in transformer architectures, PTIM can recognize linguistic and non-linguistic patterns indicative of malicious intent that traditional models often overlook. 
+Reference \cite{b8} investigates the integration of LLMs to overcome the limitations of static, signature-based detection systems that frequently struggle with zero-day exploits and polymorphic threats. 
+The authors introduce the Predictive Threat Intelligence Model (PTIM), a framework trained on approximately 100 million security-related data points, 
+including network logs and public threat databases. 
 
-Empirical validation shows that PTIM achieves a detection accuracy exceeding 95\% with a substantial reduction in false positives compared to rule-based systems. A key technical advantage of this framework is its operational efficiency; it performs significantly faster than standard LLM architectures, allowing for the near-instantaneous identification of ransomware attacks. This capability enables organizations to transition from a reactive posture to a proactive defense strategy, identifying and mitigating threats before they can cause widespread system compromise.
+Empirical validation shows that PTIM achieves a detection accuracy exceeding 95\% with a substantial reduction in false positives compared to rule-based systems. 
+Authors also claim that PTIM performs significantly faster than standard LLM architectures, what could be an advantage during reaction-time critical ransomware attacks. 
 
 \section{LLM-Based Agents for Tier 1 Triage Automation}
-While previous research emphasizes broad intelligence gathering, \cite{b9} provides a specific evaluation of LLM agents within the critical triage process of Tier 1 SOC analysts. The study proposes a structured framework where an LLM agent serves as an intermediary between a SIEM platform (Wazuh) and the human analyst. By testing five prominent models—including OpenAI’s GPT-4o, Meta’s Llama 3, and Mixtral 8x22B—the research investigates the agents' ability to autonomously classify alerts as either "interesting" or "not-interesting" based on raw log data. This classification logic is intended to filter out the high volume of "noise" generated by normal user operations, allowing analysts to focus on high-fidelity threats identified through adversary emulation tools like CALDERA.
+Thesis \cite{b9} provides a specific evaluation of LLM agents within the critical triage process of Tier 1 SOC analysts. 
+The study proposes a structured framework where an LLM agent serves as an intermediary between a SIEM platform (Wazuh) and the human analyst. 
+By testing five models including OpenAI’s GPT-4o, Meta’s Llama 3, and Mixtral 8x22B—the research investigates the agents' ability to classify alerts as either 
+"interesting" or "not-interesting" based on raw log data. This classification logic is intended to filter out the high volume of "noise" generated by normal user operations,
+allowing analysts to focus on high-fidelity threats. Security incidents were emulated using adversary simulation tool CALDERA.
 
-Experimental findings indicate that LLM agents significantly enhance the speed of initial triage and reduce the cumulative cognitive load on security staff by providing natural language explanations for each alert classification. Despite these gains, the research highlights critical limitations such as the propensity for occasional hallucinations and the inherent privacy risks of processing sensitive log data through external models. Consequently, the study concludes that while LLM agents are highly effective for routine automation, they are best deployed in a "co-pilot" capacity. This hybrid approach ensures that human expertise remains in the loop to verify LLM reasoning, thereby maximizing operational efficiency while maintaining the rigorous security standards required in a modern SOC environment.
+Experimental findings indicate that LLM agents significantly enhance the speed of initial triage and reduce the cumulative cognitive load on security staff 
+by providing natural language explanations for each alert classification. Despite these gains, the research highlights critical limitations such as the 
+occasional hallucinations and the inherent privacy risks of processing sensitive log data through external models. 
+Consequently, the study concludes that while LLM agents are highly effective for routine automation, they are best deployed in a "co-pilot" capacity. 
+This hybrid approach ensures that human expertise remains in the loop to verify LLM reasoning.
+
 
 \section{Multi-Agent Modular Architectures for Correlated Threat Detection}\label{sec:siem_end}
-As cyberattacks become increasingly multi-vector and stealthy, isolated detection systems often fail to correlate related events across different layers of an organization’s infrastructure. To address this, reference \cite{b12} proposes a modular multi-agent architecture that integrates domain-specific cybersecurity tools with the semantic reasoning capabilities of Large Language Models. The framework consists of three specialized autonomous agents—focused on email verification, server log analysis, and IP range scanning—which independently process data using tailored detection pipelines. These agents translate raw technical outputs into structured risk signals, which are then fed into a centralized contextual recommendation system.
+Isolated detection systems often fail to correlate related events across different layers of an organization’s infrastructure. 
+To address this, reference \cite{b12} proposes a modular multi-agent architecture that integrates domain-specific cybersecurity tools with the semantic reasoning 
+capabilities of Large Language Models. 
+The framework consists of three specialized autonomous agents—focused on email verification, server log analysis, 
+and IP range scanning—which independently process data using tailored detection pipelines. 
+These agents translate raw technical outputs into structured risk signals, which are then fed into a centralized contextual recommendation system.
 
-The core innovation of this architecture lies in its ability to synthesize disparate proofs from individual agents into a coherent attack narrative. By cross-analyzing signals (e.g., correlating a suspicious phishing email with subsequent lateral movement in server logs), the system can detect complex threat patterns that evade standalone sensors. Experimental results on benchmark datasets, including CIC-IDS 2017 and SpamAssassin, demonstrate a high detection accuracy of 93.6\% and a 41.3\% reduction in false positives compared to traditional rule-based methods. Furthermore, the use of LLM-based Chain-of-Thought (CoT) reporting provides explicable insights for security analysts, significantly reducing triage time and increasing confidence in the system's automated recommendations.
+By cross-analyzing signals (e.g., correlating a suspicious phishing email with subsequent lateral movement in server logs), 
+the system can detect complex threat patterns that evade standalone sensors. 
+According to the study, experimental results on benchmark datasets, including CIC-IDS 2017 and SpamAssassin, 
+demonstrate a high detection accuracy of 93.6\% and a 41.3\% reduction in false positives compared to traditional rule-based methods. 
+Furthermore, the use of LLM-based Chain-of-Thought (CoT) reporting provides explicable insights for security analysts, significantly reducing triage time and increasing confidence in the system's automated recommendations.
 
 \section{Advanced RAG Frameworks}\label{sec:rag}
-Reference \cite{b4} addresses the exponential growth of unstructured cybersecurity information and LLM hallucinations. The proposed MoRSE framework is an open-source system integrating dual RAG modules in a cascade: a structured RAG for pre-processed data and an unstructured RAG for raw text. By drawing from CVE repositories, MITRE, and ExploitDB, MoRSE achieved a 15\% improvement in general question accuracy and a 50\% increase in accuracy for CVE-related incidents compared to GPT-4 without RAG.
+Reference \cite{b4} addresses the amount of unstructured cybersecurity information which are relevant to daily work of SOC analyst. 
+The proposed MoRSE framework is an open-source system integrating dual RAG modules in a cascade: a structured RAG for pre-processed data 
+and an unstructured RAG for raw text. By drawing from CVE repositories, MITRE, and ExploitDB, MoRSE achieved 
+a 15\% improvement in general question accuracy and a 50\% increase in accuracy for CVE-related incidents compared to GPT-4 without RAG.
 
-The technical distinction of MoRSE (Mixture of RAGs Security Experts) lies in its parallel retriever architecture, which was inspired by the Mixture of Experts (MoE) paradigm to handle multidimensional cybersecurity contexts. The framework operates in two distinct phases: an Information Retrieval phase, where specialized retrievers collect semantically related data in varied formats, followed by an Answer Generation phase driven by an LLM. Unlike traditional models that rely on static parametric knowledge, MoRSE utilizes a non-parametric knowledge base that allows for real-time updates without the need for resource-intensive retraining. This capability is particularly effective for complex "Multi-Hop" reasoning tasks, where the system must correlate disparate pieces of intelligence to identify root causes or predict subsequent stages of a cyberattack.
+The technical distinction of MoRSE (Mixture of RAGs Security Experts) lies in its parallel retriever architecture, which was inspired by the Mixture of Experts (MoE) paradigm to handle multidimensional cybersecurity contexts. 
+The framework operates in two distinct phases: an Information Retrieval phase, where specialized retrievers collect semantically related data in varied formats,
+followed by an Answer Generation phase driven by an LLM. 
 
 \section{LLMs in Digital Forensics and Timeline Analysis}\label{sec:forensics}
-Beyond real-time detection and threat intelligence, post-incident investigation—specifically Digital Forensics and Incident Response (DFIR)—presents a significant bottleneck for security teams. Constructing an accurate timeline of a cyber incident is a complex, labor-intensive task that requires parsing thousands of heterogeneous security logs to identify correlations. The authors in \cite{b7} address this challenge by introducing GenDFIR, an innovative framework that leverages Retrieval-Augmented Generation (RAG) combined with Large Language Models to automate cyber incident timeline analysis.
+Beyond real-time detection and threat intelligence, post-incident investigation—specifically Digital Forensics and Incident Response (DFIR)—presents a significant bottleneck for security teams. 
+Constructing an accurate timeline of a cyber incident is a complex, labor-intensive task that requires parsing thousands of heterogeneous security logs to identify correlations. 
+The authors in \cite{b7} address this challenge by introducing GenDFIR, a framework that leverages Retrieval-Augmented Generation (RAG) combined with Large Language Models to automate cyber incident timeline analysis.
 
-By ingesting raw system events (such as Windows Security event logs detailing failed logons, credential validation errors, and audit log clearing) into a dynamic vector knowledge base, GenDFIR enables an LLM to accurately piece together the sequence of adversary actions. This methodology overcomes the traditional limitations of manual log triage, significantly accelerating the reconstruction of attack paths while mitigating human error and analyst fatigue. The RAG architecture is crucial in this context, as it anchors the LLM's outputs strictly to the ingested forensic artifacts, thereby preventing hallucinations and maintaining the evidentiary integrity of the analysis.
+By ingesting raw system events (such as Windows Security event logs detailing failed logons, credential validation errors, and audit log clearing) into a dynamic vector knowledge base, GenDFIR enables an LLM to accurately piece together the sequence of adversary actions. 
+This methodology overcomes the traditional limitations of manual log triage, significantly accelerating the reconstruction of attack paths while mitigating human error and analyst fatigue. 
+The RAG architecture is crucial in this context, as it anchors the LLM's outputs strictly to the ingested forensic artifacts, thereby preventing hallucinations and maintaining the evidentiary integrity of the analysis.
 
-Evaluations of the GenDFIR framework demonstrated its capability to successfully reconstruct complex scenarios, such as unauthorized access chains, by maintaining strict chronological coherence and contextual relevance. By automating the extraction and chronological mapping of crucial artifacts, the system produces high-fidelity timeline reports that are directly applicable for formal incident reporting, root-cause analysis, and the formulation of subsequent defensive strategies.
+Evaluations of the GenDFIR framework demonstrated its capability to successfully reconstruct complex scenarios,  
+such as unauthorized access chains, by maintaining strict chronological coherence and contextual relevance. 
+By automating the extraction and chronological mapping of crucial artifacts, the system produces timeline reports that are directly applicable for formal incident reporting, 
+root-cause analysis, and the formulation of subsequent defensive strategies.
 
 \section{Autonomous Agents for Cyber Threat Intelligence}\label{sec:cti_start}
-The automation of Cyber Threat Intelligence (CTI) analysis represents a critical frontier in reducing the manual workload of SOC analysts. As explored in \cite{b5} and \cite{b6}, security teams traditionally rely on unstructured reports from sources such as CrowdStrike or MITRE ATT\&CK to manually derive correlation rules for SIEM systems. This process is inherently slow and prone to human error. To address this, recent research proposes an autonomous AI agent capable of parsing natural language reports to identify Indicators of Compromise (IOCs) and automatically generating valid regular expressions (RegEx) for direct SIEM integration without human supervision.
+The automation of Cyber Threat Intelligence (CTI) analysis represents a critical frontier in reducing the manual workload of SOC analysts. 
+As explored in \cite{b5} and \cite{b6}, security teams traditionally rely on unstructured reports from sources such as CrowdStrike or MITRE ATT\&CK 
+to manually derive correlation rules for SIEM systems. This process is slow and prone to human error. 
+To address this, recent research proposes an autonomous AI agent capable of parsing natural language reports to identify Indicators of Compromise (IOCs) 
+and automatically generating valid regular expressions (RegEx) for direct SIEM integration without human supervision.
 
-The proposed system utilizes a graph-based approach to visualize relationships between IOCs, such as connecting specific file hashes to the domains and IP addresses involved in a singular attack campaign. However, achieving full autonomy requires overcoming four primary challenges: ensuring factual accuracy to filter hallucinations, translating complex natural language into syntactically correct RegEx, performing automated verification of these patterns, and maintaining the structural integrity of IOC relationship graphs.
+The proposed system uses a graph-based approach to visualize relationships between IOCs, such as connecting specific file hashes to the domains and IP addresses 
+involved in a singular attack campaign. However, achieving full autonomy requires overcoming four primary challenges: 
+ensuring factual accuracy to filter hallucinations, translating complex natural language into syntactically correct RegEx, performing automated verification of these patterns, and maintaining the structural integrity of IOC relationship graphs.
 
-Experimental results underscore the potential of this approach; in an analysis of over 50 CTI reports, the model identified approximately 2,900 IOCs. After autonomous filtering, 2,300 valid indicators remained, from which 2,200 RegEx patterns were successfully generated. Remarkably, the system missed only 3\% of valid IOCs compared to manual ground truth. This shift toward self-learning cybersecurity automation marks a significant milestone in delegating repetitive SOC tasks to autonomous agents, thereby allowing human analysts to focus on higher-level strategic defense.
+Experimental results underscore the potential of this approach. 
+In an analysis of over 50 CTI reports, the model identified approximately 2,900 IOCs. After autonomous filtering, 2,300 valid indicators remained, 
+from which 2,200 RegEx patterns were successfully generated. Remarkably, the system missed only 3\% of valid IOCs compared to manual ground truth. 
 
 \section{Optimization of SIEM Detection Rule Sets}
-While the automated generation of rules significantly expands detection coverage, it often introduces a secondary challenge: the proliferation of redundant or overlapping rules. Such overlaps increase computational overhead, response latency, and, most critically, alert fatigue for SOC analysts. Reference \cite{b10} introduces RuleGenie, a novel LLM-aided recommender system designed to optimize enterprise-level SIEM rule sets. The authors argue that manual optimization is increasingly unsustainable due to the sheer scale of modern rule bases, which can contain thousands of platform-specific queries (e.g., KQL, Sigma, or SPL) with complex logic.
+While the automated generation of rules significantly expands detection coverage, it often introduces a secondary challenge: the proliferation of redundant or overlapping rules. 
+Such overlaps increase computational overhead, response latency, and, most critically, alert fatigue for SOC analysts. 
+Reference \cite{b10} introduces RuleGenie, a LLM-aided recommender system designed to optimize enterprise-level SIEM rule sets. 
+The authors argue that manual optimization is increasingly unsustainable due to the sheer scale of modern rule bases, 
+which can contain thousands of platform-specific queries (e.g., KQL, Sigma, or SPL) with complex logic.
 
-The RuleGenie framework leverages the multi-head attention capabilities of transformer models to generate high-dimensional embeddings of SIEM rules. By applying a similarity matching algorithm to these embeddings, the system identifies the top-k most similar rules within a repository. Furthermore, RuleGenie utilizes Chain-of-Thought (CoT) reasoning to analyze the underlying logic of flagged rules, allowing it to recommend consolidations or deletions of redundant logic. This optimization process ensures that the SIEM maintains a lean and efficient detection posture, reducing the signal-to-noise ratio and ensuring that the most relevant alerts are prioritized for human investigation.
+The RuleGenie framework leverages the multi-head attention capabilities of transformer models to generate high-dimensional embeddings of SIEM rules. 
+By applying a similarity matching algorithm to these embeddings, the system identifies the top-k most similar rules within a repository. 
+Furthermore, RuleGenie utilizes Chain-of-Thought (CoT) reasoning to analyze the underlying logic of flagged rules, allowing it to recommend consolidations 
+or deletions of redundant logic. This optimization process ensures that the SIEM maintains a lean and efficient detection posture, 
+reducing the signal-to-noise ratio and ensuring that the most relevant alerts are prioritized for human investigation.
 
 \section{Automated Mapping of SIEM Rules to Adversarial Techniques}\label{sec:cti_end}
-While the generation and optimization of SIEM rules are vital for visibility, the effectiveness of a security posture is often measured by its alignment with standardized frameworks like MITRE ATT\&CK. As explored in \cite{b11}, manual mapping of structured detection rules—such as those written in Splunk’s Search Processing Language (SPL)—to specific Tactics, Techniques, and Procedures (TTPs) is a labor-intensive process prone to subjective error. To resolve this, the authors propose Rule-ATT\&CK Mapper (RAM), a multi-stage pipeline that utilizes Large Language Models to autonomously categorize structured rules. RAM is unique in its "prompt chaining" approach, which first translates technical rule syntax into natural language descriptions enriched by external contextual information (e.g., IoC significance) before performing the final technique recommendation.
+While the generation and optimization of SIEM rules are vital for visibility, the effectiveness of a security posture is often measured by its alignment with 
+standardized frameworks like MITRE ATT\&CK. As explored in \cite{b11}, manual mapping of structured detection rules—such as those written 
+in Splunk’s Search Processing Language (SPL)—to specific Tactics, Techniques, and Procedures (TTPs) is a complicated process prone to error. 
+To resolve this, the authors propose Rule-ATT\&CK Mapper (RAM), an approach using Large Language Models to autonomously categorize structured rules. 
+RAM first translates technical rule syntax into natural language descriptions enriched by 
+external contextual information (e.g., IoC significance) before performing the final technique recommendation.
 
-Experimental evaluations using the Splunk Security Content dataset demonstrate that RAM significantly improves mapping accuracy without the need for model fine-tuning. By testing multiple models, including GPT-4-Turbo and IBM Granite, the study found that incorporating a web-search agent to retrieve supplementary contextual knowledge about Indicators of Compromise (IoCs) is essential for overcoming the limitations of an LLM’s implicit domain knowledge. The framework achieved an F1-score of 0.62 and a recall of 0.75, highlighting its capability to assist SOC teams in maintaining an up-to-date and accurate coverage map of the ATT\&CK matrix. This automation allows security engineers to rapidly validate whether their detection rule base provides sufficient protection against specific adversarial strategies.
+Experimental evaluations using the Splunk Security Content dataset demonstrate that RAM improves mapping accuracy without the need for model fine-tuning. 
+By testing multiple models, including GPT-4-Turbo and IBM Granite, the study found that incorporating a web-search agent to retrieve supplementary contextual knowledge 
+about Indicators of Compromise (IoCs) is essential for overcoming the limitations of an LLM’s implicit domain knowledge. 
+The framework achieved an F1-score of 0.62 and a recall of 0.75, highlighting its capability to assist SOC teams in maintaining an up-to-date and accurate coverage 
+map of the ATT\&CK matrix.
 
 \section{Our work - Multiagent incident response automation}\label{sec:mira}
 
-To address the inherent limitations of modern Security Operations Centers (SOC), we propose the Multiagent Incident Response Assistant (MIRA). MIRA is designed as an autonomous framework to assist analysts during the incident reaction phase by leveraging specialized Large Language Model (LLM) agents and advanced retrieval techniques.
+To address the limitations of traditional Security Operations Centers (SOC), we propose prototype of the Multiagent Incident Response Assistant (MIRA). 
+MIRA is designed as framework to assist analysts during the incident reaction phase by leveraging specialized LLM agents and RAG with hybrid search.
 
 \subsection{System Architecture and Tech Stack}
-The MIRA framework is built upon a modular infrastructure deployed on the Pyctus environment. The core orchestration is handled via \textit{LangGraph}, which enables a multiagent architecture, while \textit{Chainlit} provides the user interface for human-operator interaction. The backend is powered by \textit{Django} and \textit{PostgreSQL}, the latter specifically utilized for storing embeddings and performing vector operations such as cosine similarity. 
+The MIRA framework is built upon a modular infrastructure deployed in "on-premises" environment. 
+The core orchestration is handled via \textit{LangGraph}, which enables a multiagent architecture, 
+while \textit{Chainlit} provides the user interface for human-operator interaction. 
+The backend is powered by \textit{Django} and \textit{PostgreSQL}, the latter specifically utilized for storing embeddings and performing vector operations 
+such as semantic search using cosine similarity and fulltext search using algorithm BM25. 
 
 The system integrates a playbook database consisting of approximately 90 playbooks across various security categories, managed via \textit{MediaWiki} and \textit{Cacao Roaster}. For local model execution and management, \textit{Ollama} is employed, ensuring that sensitive security data can be processed on-premises or within restricted hardware environments.
 
 \subsection{Hybrid Search and RAG Methodology}
-The core of the MIRA framework is a Retrieval-Augmented Generation (RAG) pipeline that leverages a hybrid search approach to maximize the relevance of retrieved security playbooks. This system distinguishes between two primary search vectors:
+The core of the MIRA framework is a Retrieval-Augmented Generation (RAG) pipeline that leverages a hybrid search approach 
+to maximize the relevance of retrieved security playbooks. This system distinguishes between two primary search approaches:
 
 \begin{itemize}
     \item \textbf{Full-text Search (FT):} This branch focuses on explicit technical identifiers, such as specific CVE IDs, attack categories, or unique security keywords. We implement the \textbf{BM25 (Best Matching 25)} algorithm, which ranks documents based on the appearance frequency of search terms relative to the entire playbook repository.
-    \item \textbf{Semantic Search (SEM):} This branch enables retrieval based on the underlying intent and context of the query. Security playbooks are vectorized in their entirety with the \texttt{all-MiniLM-L6-v2} embedding model and stored in an \textit{in-memory} vector database. Queries are also vectorized using the same model to ensure consistent similarity scoring. To calculate the relationship between the query vector and playbook embeddings, we utilize \textbf{cosine similarity}.
+    \item \textbf{Semantic Search (SEM):} This branch enables retrieval based on the underlying intent and context of the query. Security playbooks are vectorized in their entirety with the \texttt{all-MiniLM-L6-v2} embedding model and stored in an vector database. Queries are also vectorized using the same model to ensure consistent similarity scoring. To calculate the relationship between the query vector and playbook embeddings, \textbf{cosine similarity} is used.
 \end{itemize}
 
 \subsection{Result Fusion and Configuration}
@@ -230,7 +329,8 @@ MIRA utilizes a "Supervisor" architecture to manage task delegation. In this par
     \item \textbf{Chat Agent:} Serves as the conversational interface, allowing analysts to query the system for context, summaries, or clarification on specific alerts.
 \end{itemize}
 
-Architecture (Figure \ref{fig:architecture-multiagent}) maintains visual and logical separation between agents, allowing for specialized context management. The supervisor ensures that agent outputs are validated before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
+Architecture (Figure \ref{fig:architecture-multiagent}) maintains logical separation between agents, allowing for specialized context management. 
+The supervisor agent closes the loop and provides answer back to the operator.
 
 \begin{figure}[ht]
     \centering
@@ -238,16 +338,6 @@ Architecture (Figure \ref{fig:architecture-multiagent}) maintains visual and log
     \caption{Multiagent orchestration and task splitting in MIRA.}
     \label{fig:architecture-multiagent}
 \end{figure}
-
-\subsection{Multiagent Orchestration and Task Splitting}
-MIRA utilizes a "Supervisor" architecture to manage task delegation. In this paradigm, a central supervisor receives the analyst's query, maps it to the correct worker, and manages the handoff. We define specialized worker roles including:
-\begin{itemize}
-    \item \textbf{Chat Agent:} Provides domain-specific knowledge and categorization of incidents.
-    \item \textbf{Todo Agent:} Drafts specific response instructions based on identified playbooks.
-    \item \textbf{Action Agent:} Maps instructions to concrete SOC actions and tools.
-\end{itemize}
-
-This architecture maintains visual and logical separation between agents, allowing for specialized context management using techniques like sliding windows or history summaries. The supervisor ensures that agent outputs are validated against the ground truth before being presented to the operator, significantly reducing the cognitive load while maintaining human-in-the-loop oversight.
 
 \subsection{Infrastructure and CI/CD}
 The development lifecycle is supported by a robust CI/CD pipeline integrated with GitLab. Every merged Pull Request triggers an automated build of a Docker image for the Python application, which is then deployed to the Pyctus infrastructure via SSH. This ensures that the assistant remains up-to-date with the latest research-driven optimizations in search algorithms and model configurations.
@@ -291,6 +381,8 @@ A surprising trend was observed in the \textbf{Chat Agent} role, particularly wi
 \section{Limitations and Future Work}\label{sec:limitations}
 
 While the MIRA framework demonstrates the potential for multi-agent automation in the SOC, several limitations remain that provide opportunities for future research.
+Also it is important to note the fact, that MIRA framework is a proof of concept and we will continue to develop it in the future. 
+We state limitations of framework below.
 
 \subsection{Evaluation Methodology}
 \begin{itemize}
@@ -313,19 +405,19 @@ While the MIRA framework demonstrates the potential for multi-agent automation i
 \end{itemize}
 \section{Conclusion}\label{sec:conclusion}
 
-In this work, we presented the Multiagent Incident Response Assistant (MIRA), a specialized framework designed to accelerate incident response times and improve quality of responses. 
+In this work, we presented the prototype of the Multiagent Incident Response Assistant (MIRA), framework designed to accelerate incident response times and improve quality of responses. 
 
-Our investigation into the MIRA framework yielded several key insights into the integration of AI within cybersecurity:
+Our investigation into the MIRA framework yielded several insights into the integration of AI within cybersecurity:
 \begin{itemize}
-    \item \textbf{The Centrality of RAG:} Our experimental results proved that Retrieval-Augmented Generation is an absolute necessity for technical security tasks. Without RAG, even high-capacity models failed to generate valid command-line instructions or JSON-formatted actions. The implementation of a hybrid search approach (combining BM25 and semantic cosine similarity) ensured that these models remained grounded in verified organizational playbooks.
-    \item \textbf{Agent Specialization:} We found that a "one-size-fits-all" model approach is suboptimal. While larger models like \textbf{Qwen3 (14B)} excelled at complex task planning (Todo Agent), more efficient models like \textbf{Llama 3.1 (8B)} proved highly effective at technical extraction (Action Agent) when properly augmented.
-    \item \textbf{Operational Trade-offs:} Our "LLM as Judge" evaluation revealed a unique ``verbosity penalty'' in conversational settings. While RAG increases technical accuracy, it can degrade the quality of human-analyst interaction by introducing excessive procedural detail. This highlights the need for precise prompt engineering to balance technical grounding with conversational directness.
+    \item \textbf{RAG application for technical tasks:} Our experimental results showed that Retrieval-Augmented Generation improves accuracy for technical security tasks. Without RAG, all evaluated LLMs failed to generate valid command-line instructions or JSON-formatted actions. The implementation of a hybrid search approach (combining BM25 and semantic cosine similarity) may assure that the models remain grounded in verified organizational playbooks. For further improvements of RAG approach, splitting playbooks into smaller chunks may assure better results.
+    \item \textbf{RAG application for conversational tasks:} On the other hand, results showed that RAG can degrade performance in conversational tasks. The models tend to generate overly detailed or unnecessary procedural information when provided with retrieved context, which may reduce the quality of human-analyst interaction.
+    \item \textbf{Threshold for RAG:} Results showed especially bad performance for questions, which were not grounded in our dataset. In these scenarios was also our system prompt augmented with context outside of scope of question and degraded quality of final answer. This fact needs to be considered in fugure work. 
 \end{itemize}
 
-Future work will focus on closing the operational feedback loop. By implementing a system for collecting analyst feedback and utilizing \textit{Reinforcement Learning from AI Feedback} (RLAIF), we aim to refine the models' weights to better reflect the urgency and priority of real-world security incidents. Ultimately, the MIRA framework serves as a foundational step toward an autonomous, proactive SOC capable of keeping pace with the rapidly evolving threat landscape.
+Future work will focus limitations described in Section\ref{sec:limitations}.
 \bibliographystyle{IEEEtran}
 \bibliography{references}
 
-% TODO skratit text, odstranit niektore pojmy, dopisat ze len uvazujeme o takychto searchoch a dopisat aky je aktualne vybraty, nie ze su implementovane
-% pridat do zdrojov DeepEval, LangGraph a Chainlit ... pozret ci MRR ma vzorec
+% TODO odstranit niektore pojmy, dopisat ze len uvazujeme o takychto searchoch a dopisat aky je aktualne vybraty, nie ze su implementovane
+% TODO dopisat ze treba porovnat multiagent vs singleagent
 \end{document}
