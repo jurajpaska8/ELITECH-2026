@@ -40,7 +40,7 @@ a framework designed to streamline the incident reaction phase through a special
 MIRA utilizes a supervisor-based architecture to delegate tasks among specialized sub-agents: a Todo Agent for workflow planning, an Action Agent for technical command generation, and a Chat Agent for analyst interaction. 
 We implement a hybrid search mechanism combining BM25 full-text search with semantic cosine similarity to ensure responses are grounded in verified security playbooks. 
 
-Our evaluation is uses a "LLM-as-Judge" approach with the Mistral-3 (14B) model, benchmarks the performance of Qwen3 (14B), Llama 3.1 (8B), and Phi-4 (3.8B) for three types of tasks. 
+Our evaluation employs a "LLM-as-Judge" approach with the Mistral-3 (14B) model, benchmarks the performance of Qwen3 (14B), Llama 3.1 (8B), and Phi-4 (3.8B) for three types of tasks. 
 Results show potential of RAG in technical tasks but also limitations in conversational tasks due to verbosity caused by long and unstructured playbooks retrieved from memory.   
 \end{abstract}
 
@@ -288,7 +288,7 @@ splitting dataset into smaller chunks, we propose these approaches for finetunin
 \begin{itemize}
     \item \textbf{Order-based Score:} A scoring system where a retrieved target playbook is assigned points based on its position ($5 - IDX$ for the TOP 5 results).
     \item \textbf{Hit Rate:} A binary metric indicating whether the desired playbook is present within the top $K$ results.
-    \item \textbf{Precision K:} The proportion of relevant playbooks found within the top $K$ retrieved items.
+    \item \textbf{Precision@K:} The proportion of relevant playbooks found within the top $K$ retrieved items.
     \item \textbf{Mean Reciprocal Rank (MRR):} The average of the reciprocal ranks of the first relevant playbook, prioritizing configurations that place the correct solution at the top of the list.
 \end{itemize}
 
@@ -380,9 +380,8 @@ The experimental data reveals several critical insights regarding the behavior o
 \subsection{The Necessity of RAG for Technical Tasks}
 For the \textbf{Action Agent}, performance without RAG was negligible, with scores ranging from 0.00 to 0.02. 
 Without access to the specific syntax and parameters defined in the security playbooks, 
-the models consistently failed to produce valid machine-readable JSON or correct technical commands. 
-Upon enabling RAG, the \textbf{Llama 3.1 (8B)} model showed the most significant improvement, reaching a score of 0.31. 
-This confirms that RAG is a mandatory requirement for agents tasked with technical command generation.
+the models consistently failed to produce valid technical commands. 
+By enabling RAG, the \textbf{Llama 3.1 (8B)} model showed the most significant improvement, reaching a score of 0.31. 
 
 \subsection{The Verbosity Penalty in Conversational Tasks}
 A surprising trend was observed in the \textbf{Chat Agent} role, particularly with the \textbf{Qwen3} and \textbf{Llama 3.1} models. 
@@ -400,7 +399,9 @@ We state limitations of framework below.
 \begin{itemize}
     \item \textbf{Evaluation Framework:} Our current assessment relies exclusively on the \textit{LLM-as-Judge} paradigm. While efficient, future work should incorporate hybrid evaluation metrics, including \textbf{BERTscore} and \textbf{Cosine Similarity}, alongside qualitative feedback from expert human analysts to provide a more holistic validation of agent performance.
     \item \textbf{Dataset Alignment:} The evaluation dataset included several queries that fell outside the scope of the available playbook repository. While this served to highlight the necessity of RAG, it likely depressed the performance scores of baseline models. Future benchmarks should utilize a more balanced dataset to measure the limits of both zero-shot and retrieval-augmented reasoning.
-    \item \textbf{Hyperparameter Tuning:} This study did not explore the impact of \textbf{temperature settings} on agent performance. Given that temperature significantly influences the balance between technical precision and conversational creativity, future iterations will include a grid search to identify optimal hyperparameter configurations for each specialized agent.
+    \item \textbf{Hyperparameter Tuning of LLM calls:} This study did not explore the impact of \textbf{temperature settings} on agent performance. Given that temperature significantly influences the balance between technical precision and conversational creativity, future iterations will include a grid search to identify optimal hyperparameter configurations for each specialized agent.
+    \item \textbf{Hyperparameter Tuning of hybrid search:} This study did not explore the impact of setting of parameters \textbf{K - TOP K playbooks retrieved} and \textbf{weight of semantic search} on RAG performance. 
+    Future iterations will include a grid search to identify optimal hyperparameters configurations for different types of search query.
 \end{itemize}
 
 \subsection{Architecture and Data Management}
@@ -408,6 +409,8 @@ We state limitations of framework below.
     \item \textbf{Granularity of Vectorization:} Currently, security playbooks are vectorized in their entirety. This coarse-grained approach can lead to the inclusion of irrelevant information in the context window, potentially inducing noise or hallucinations. Moving to a more granular, step-level chunking strategy could improve retrieval precision and agent focus.
     \item \textbf{Context Management:} We use approach of sliding window with appended RAG context to manage dialogue context. While functional, this may be suboptimal for complex, multi-stage incidents. Future research will explore more sophisticated memory architectures, such as \textbf{Vector-based Long-term Memory} or \textbf{Hierarchical Summarization}, to maintain coherence over extended investigations.
     \item \textbf{Supervisor Logic:} The current supervisor functions primarily as an intent classifier for task delegation. Enhancing this agent with \textbf{Reasoning Loops (ReAct)} and autonomous validation steps would allow the system to handle more ambiguous security scenarios that require multi-step deductive reasoning.
+    \item \textbf{Multiagent vs Singleagent:} This paper would also benefit with comparison of performance between single agent and multiagent approach. Using single agent would simplify an architecture what would result in reduced implementations costs.
+    \item \textbf{Using existing agentic solutions:} With increasing popularity of solution like Hermes or OpenClaw, it would be worth to compare performance of similar system designed in these tools.
 \end{itemize}
 
 \subsection{Optimization and Learning}
@@ -429,7 +432,6 @@ Our investigation into the MIRA framework yielded several insights into the inte
 Future work will focus limitations described in Section\ref{sec:limitations}.
 \bibliographystyle{IEEEtran}
 \bibliography{references}
+% TODO add example for benchmark test - fail in chat, success in action, evaluation criteria - add prompt
 
-% TODO odstranit niektore pojmy, dopisat ze len uvazujeme o takychto searchoch a dopisat aky je aktualne vybraty, nie ze su implementovane
-% TODO dopisat ze treba porovnat multiagent vs singleagent
 \end{document}
