@@ -396,42 +396,42 @@ This section examines specific cases where the inclusion of Retrieval-Augmented 
 \subsection{Chat Agent: The Verbosity Penalty}
 In conversational Q\&A, our results indicate that RAG can occasionally decrease the evaluation score. This phenomenon, termed the ``verbosity penalty,'' occurs when the model incorporates excessive procedural data from the playbook that was not explicitly requested.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \centering
 \caption{Chat Agent Comparison (Query: ``What is a ransomware note?'')}
 \label{tab:chat_comparison}
 \small
-\begin{tabular}{@{} l p{3.5cm} p{3.5cm} @{}}
+\begin{tabular}{@{} l p{7cm} p{7cm} @{}}
 \toprule
 \textbf{Feature} & \textbf{Baseline (No RAG)} & \textbf{RAG-Augmented} \\ \midrule
-\textbf{Validation Criteria} & \multicolumn{2}{p{7.3cm}}{Directness, accuracy, and avoidance of unnecessary remediation advice.} \\ \addlinespace
-\textbf{Expected Answer} & \multicolumn{2}{p{7.3cm}}{A message left by attackers stating files are encrypted and providing payment instructions.} \\ \addlinespace
+\textbf{Validation Criteria} & \multicolumn{2}{p{14.5cm}}{Directness, accuracy, and avoidance of unnecessary remediation advice.} \\ \addlinespace
+\textbf{Expected Answer} & \multicolumn{2}{p{14.5cm}}{A message left by attackers stating files are encrypted and providing payment instructions.} \\ \addlinespace
 \textbf{Actual Answer} & Provides a concise and accurate definition of a ransomware note and typical delivery methods. & Provides the definition but follows with the entire SOC ransomware workflow and recovery steps. \\ \addlinespace
 \textbf{Validation Comment} & ``Direct, accurate, and context-aware answer with no unnecessary guidance.'' & ``Response is more detailed than necessary... drifts into unrelated remediation advice.'' \\ \addlinespace
 \textbf{Score} & \textbf{1.0} & \textbf{0.3} \\ \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \textbf{Analysis:} As seen in Table \ref{tab:chat_comparison}, the score dropped because the model attempted to be overly helpful with the retrieved context. The judge (Ministral-3) penalized the response for failing the ``conciseness'' and ``relevance'' criteria, highlighting that for simple definitions, RAG can introduce noise.
 
 \subsection{Action Agent: Mandatory Technical Grounding}
 For technical execution, RAG is not merely an improvement but a requirement. Without it, the model lacks the schema knowledge required to produce machine-readable outputs.
 
-\begin{table}[htbp]
+\begin{table*}[tbp]
 \centering
 \caption{Action Agent Comparison (Query: ``Blacklist IP 185.23.44.9'')}
 \label{tab:action_comparison}
 \small
-\begin{tabular}{@{} l p{3.5cm} p{3.5cm} @{}}
+\begin{tabular}{@{} l p{7cm} p{7cm} @{}}
 \toprule
 \textbf{Feature} & \textbf{Baseline (No RAG)} & \textbf{RAG-Augmented} \\ \midrule
-\textbf{Validation Criteria} & \multicolumn{2}{p{7.3cm}}{Correct action extraction, valid JSON syntax, and proper parameter mapping.} \\ \addlinespace
-\textbf{Expected Answer} & \multicolumn{2}{p{7.3cm}}{\texttt{\{"action": "blacklist\_ip", "params": \{"ip": "185.23.44.9"\}\}}} \\ \addlinespace
+\textbf{Validation Criteria} & \multicolumn{2}{p{14.5cm}}{Correct action extraction, valid JSON syntax, and proper parameter mapping.} \\ \addlinespace
+\textbf{Expected Answer} & \multicolumn{2}{p{14.5cm}}{\texttt{\{"action": "blacklist\_ip", "params": \{"ip": "185.23.44.9"\}\}}} \\ \addlinespace
 \textbf{Actual Answer} & ``I'm sorry, I can't assist with that request. Please contact your administrator.'' & \texttt{\{"action": "blacklist\_ip", "params": \{"ip": "185.23.44.9"\}, ...\}} \\ \addlinespace
 \textbf{Validation Comment} & ``Agent failed to return a valid machine-readable response or identify the action.'' & ``Successfully extracted action and parameters based on retrieved playbook context.'' \\ \addlinespace
 \textbf{Score} & \textbf{0.0} & \textbf{0.31 (Avg)} \\ \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 \textbf{Analysis:} Table \ref{tab:action_comparison} demonstrates the critical role of grounding. In the baseline configuration, the model has no knowledge of the \texttt{blacklist\_ip} function or the required JSON structure. While the RAG score of 0.31 indicates that the models still struggle with perfect JSON consistency, it represents a transition from zero utility to a functional state capable of being parsed by security orchestration tools.
 
