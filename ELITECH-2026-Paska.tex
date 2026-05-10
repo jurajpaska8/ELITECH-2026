@@ -8,6 +8,7 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{booktabs}
+
 \usepackage[pdftex]{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -76,7 +77,8 @@ Sections \ref{sec:cti_start} through \ref{sec:cti_end} discuss autonomous agents
 Section \ref{sec:mira} presents the architecture and methodology of our proposed framework, the Multiagent Incident Response Assistant (MIRA). 
 Section \ref{sec:results} details our experimental evaluation and results. Section \ref{sec:limitations} discusses current limitations and potential for future research. Section \ref{sec:conclusion} provides concluding remarks.
 
-\section{Analysis of Analyst Interaction with LLMs}\label{sec:empirical}
+\section{Related Work and Context}\label{sec:related_work}
+\subsection{Analysis of Analyst Interaction with LLMs}\label{sec:empirical}
 Recent research suggests that SOC analysts uses LLMs primarily as support tool rather than as autonomous experts.
 According to a study \cite{b1} that analyzed thousands of analyst-generated queries in an operational environment, 
 LLMs are most frequently used for command explanation, scriptwriting, documentation improvement, and data analysis support.
@@ -93,7 +95,7 @@ mostly involving iterative text refinement for incident reporting or explanation
 The authors highlight the potential for integrating LLM tools directly into SIEM systems 
 to reduce cognitive load by eliminating context switching.
 
-\section{Multi-model Approaches and Classification for reducing false positives}\label{sec:siem_start}
+\subsection{Multi-model Approaches and Classification for Reducing False Positives}\label{sec:siem_start}
 In \cite{b2}, the authors explored a multi-model approach to classify security incidents into two categories: 
 interesting and uninteresting, where interesting alerts are supposed to be evaluated by SOC operator and uniteresting alerts are marked as false positives.
 The highest success rate was achieved using GPT-4, reaching a precision of 94\% and a recall of 92\%. 
@@ -119,7 +121,7 @@ while the success rate of the multi-model voting itself is not clearly specified
 Another open point is redundancy; if GPT-4 and GPT-3.5 are highly correlated, the third model’s output may be consistently overruled. 
 Furthermore, the nature of the "tuning" mentioned is unclear—whether it involved full fine-tuning or merely adjusting weights for final scoring—and.
 
-\section{Integration into Open-Source SIEM}
+\subsection{Integration into Open-Source SIEM}
 The authors in \cite{b3} present the Security Event Response Copilot (SERC) system, built on the open-source Wazuh SIEM.
 The system adds two components: a RAG-based module for context-aware incident retrieval and an LLM module for generating recommendations. 
 The RAG system draws information from MITRE ATT\&CK, the NIST Cybersecurity Framework (CSF), and the SOCFortress incident response knowledge base.
@@ -135,7 +137,7 @@ Pixtral consistently achieved higher precision and F1-scores (ranging between 85
 In contrast, while the OpenAI model peaked at higher semantic alignment (75.81\% cosine similarity in certain cases), 
 it exhibited performance dips, suggesting that Pixtral may be a more stable candidate for consistent automated triage in open-source SIEM environments.
 
-\section{Predictive Threat Intelligence Models}
+\subsection{Predictive Threat Intelligence Models}
 Reference \cite{b8} investigates the integration of LLMs to overcome the limitations of static, signature-based detection systems that frequently struggle with zero-day exploits and polymorphic threats. 
 The authors introduce the Predictive Threat Intelligence Model (PTIM), a framework trained on approximately 100 million security-related data points, 
 including network logs and public threat databases. 
@@ -143,7 +145,7 @@ including network logs and public threat databases.
 Empirical validation shows that PTIM achieves a detection accuracy exceeding 95\% with a substantial reduction in false positives compared to rule-based systems. 
 Authors also claim that PTIM performs significantly faster than standard LLM architectures, what could be an advantage during reaction-time critical ransomware attacks. 
 
-\section{LLM-Based Agents for Tier 1 Triage Automation}
+\subsection{LLM-Based Agents for Tier 1 Triage Automation}
 Thesis \cite{b9} provides a specific evaluation of LLM agents within the critical triage process of Tier 1 SOC analysts. 
 The study proposes a structured framework where an LLM agent serves as an intermediary between a SIEM platform (Wazuh) and the human analyst. 
 By testing five models including OpenAI’s GPT-4o, Meta’s Llama 3, and Mixtral 8x22B—the research investigates the agents' ability to classify alerts as either 
@@ -157,7 +159,7 @@ Consequently, the study concludes that while LLM agents are highly effective for
 This hybrid approach ensures that human expertise remains in the loop to verify LLM reasoning.
 
 
-\section{Multi-Agent Modular Architectures for Correlated Threat Detection}\label{sec:siem_end}
+\subsection{Multi-Agent Modular Architectures for Correlated Threat Detection}\label{sec:siem_end}
 Isolated detection systems often fail to correlate related events across different layers of an organization’s infrastructure. 
 To address this, reference \cite{b12} proposes a modular multi-agent architecture that integrates domain-specific cybersecurity tools with the semantic reasoning 
 capabilities of Large Language Models. 
@@ -171,7 +173,7 @@ According to the study, experimental results on benchmark datasets, including CI
 demonstrate a high detection accuracy of 93.6\% and a 41.3\% reduction in false positives compared to traditional rule-based methods. 
 Furthermore, the use of LLM-based Chain-of-Thought (CoT) reporting provides explicable insights for security analysts, significantly reducing triage time and increasing confidence in the system's automated recommendations.
 
-\section{Advanced RAG Frameworks}\label{sec:rag}
+\subsection{Advanced RAG Frameworks}\label{sec:rag}
 Reference \cite{b4} addresses the amount of unstructured cybersecurity information which are relevant to daily work of SOC analyst. 
 The proposed MoRSE framework is an open-source system integrating dual RAG modules in a cascade: a structured RAG for pre-processed data 
 and an unstructured RAG for raw text. By drawing from CVE repositories, MITRE, and ExploitDB, MoRSE achieved 
@@ -181,7 +183,7 @@ The technical distinction of MoRSE (Mixture of RAGs Security Experts) lies in it
 The framework operates in two distinct phases: an Information Retrieval phase, where specialized retrievers collect semantically related data in varied formats,
 followed by an Answer Generation phase driven by an LLM. 
 
-\section{LLMs in Digital Forensics and Timeline Analysis}\label{sec:forensics}
+\subsection{LLMs in Digital Forensics and Timeline Analysis}\label{sec:forensics}
 Beyond real-time detection and threat intelligence, post-incident investigation—specifically Digital Forensics and Incident Response (DFIR)—presents a significant bottleneck for security teams. 
 Constructing an accurate timeline of a cyber incident is a complex, labor-intensive task that requires parsing thousands of heterogeneous security logs to identify correlations. 
 The authors in \cite{b7} address this challenge by introducing GenDFIR, a framework that leverages Retrieval-Augmented Generation (RAG) combined with Large Language Models to automate cyber incident timeline analysis.
@@ -195,7 +197,7 @@ such as unauthorized access chains, by maintaining strict chronological coherenc
 By automating the extraction and chronological mapping of crucial artifacts, the system produces timeline reports that are directly applicable for formal incident reporting, 
 root-cause analysis, and the formulation of subsequent defensive strategies.
 
-\section{Autonomous Agents for Cyber Threat Intelligence}\label{sec:cti_start}
+\subsection{Autonomous Agents for Cyber Threat Intelligence}\label{sec:cti_start}
 The automation of Cyber Threat Intelligence (CTI) analysis represents a critical frontier in reducing the manual workload of SOC analysts. 
 As explored in \cite{b5} and \cite{b6}, security teams traditionally rely on unstructured reports from sources such as CrowdStrike or MITRE ATT\&CK 
 to manually derive correlation rules for SIEM systems. This process is slow and prone to human error. 
@@ -210,7 +212,7 @@ Experimental results underscore the potential of this approach.
 In an analysis of over 50 CTI reports, the model identified approximately 2,900 IOCs. After autonomous filtering, 2,300 valid indicators remained, 
 from which 2,200 RegEx patterns were successfully generated. Remarkably, the system missed only 3\% of valid IOCs compared to manual ground truth. 
 
-\section{Optimization of SIEM Detection Rule Sets}
+\subsection{Optimization of SIEM Detection Rule Sets}
 While the automated generation of rules significantly expands detection coverage, it often introduces a secondary challenge: the proliferation of redundant or overlapping rules. 
 Such overlaps increase computational overhead, response latency, and, most critically, alert fatigue for SOC analysts. 
 Reference \cite{b10} introduces RuleGenie, a LLM-aided recommender system designed to optimize enterprise-level SIEM rule sets. 
@@ -223,7 +225,7 @@ Furthermore, RuleGenie utilizes Chain-of-Thought (CoT) reasoning to analyze the 
 or deletions of redundant logic. This optimization process ensures that the SIEM maintains a lean and efficient detection posture, 
 reducing the signal-to-noise ratio and ensuring that the most relevant alerts are prioritized for human investigation.
 
-\section{Automated Mapping of SIEM Rules to Adversarial Techniques}\label{sec:cti_end}
+\subsection{Automated Mapping of SIEM Rules to Adversarial Techniques}\label{sec:cti_end}
 While the generation and optimization of SIEM rules are vital for visibility, the effectiveness of a security posture is often measured by its alignment with 
 standardized frameworks like MITRE ATT\&CK. As explored in \cite{b11}, manual mapping of structured detection rules—such as those written 
 in Splunk’s Search Processing Language (SPL)—to specific Tactics, Techniques, and Procedures (TTPs) is a complicated process prone to error. 
@@ -237,7 +239,7 @@ about Indicators of Compromise (IoCs) is essential for overcoming the limitation
 The framework achieved an F1-score of 0.62 and a recall of 0.75, highlighting its capability to assist SOC teams in maintaining an up-to-date and accurate coverage 
 map of the ATT\&CK matrix.
 
-\section{Our work - Multiagent incident response automation}\label{sec:mira}
+\section{MIRA System Architecture}\label{sec:mira}
 
 To address the limitations of traditional Security Operations Centers (SOC), we propose prototype of the Multiagent Incident Response Assistant (MIRA). 
 MIRA is designed as framework to assist analysts during the incident reaction phase by leveraging specialized LLM agents and RAG with hybrid search.
@@ -352,9 +354,9 @@ To determine the optimal configuration for the MIRA framework, we conducted a se
 The results, summarized in Table \ref{tab:model_results}, highlight the varying impact of retrieval-augmented context on different task types.
 
 \begin{table}[htbp]
+\centering
 \caption{Average performance scores by Agent and Model}
 \label{tab:model_results}
-\begin{center}
 \begin{tabular}{llcc}
 \toprule
 \textbf{Agent} & \textbf{Model} & \textbf{Without RAG} & \textbf{With RAG} \\
@@ -372,7 +374,6 @@ The results, summarized in Table \ref{tab:model_results}, highlight the varying 
 & Llama 3.1 (8B) & 0.23 & 0.17 \\
 \bottomrule
 \end{tabular}
-\end{center}
 \end{table}
 
 The experimental data reveals several critical insights regarding the behavior of LLMs in a SOC environment:
@@ -388,6 +389,51 @@ A surprising trend was observed in the \textbf{Chat Agent} role, particularly wi
 Both models saw a decrease in performance when RAG was enabled. The reasoning provided by the \textit{Mistral-3} judge indicated a ``verbosity penalty''; 
 the inclusion of retrieved playbook context often led the models to generate responses that were overly detailed or included unnecessary procedural information, 
 drifting away from the directness required in a conversational setting. Only the \textbf{Phi-4 (3.8B)} model managed to improve its chat score with RAG (0.58 to 0.63).
+
+\section{Qualitative Analysis of Agent Performance}
+This section examines specific cases where the inclusion of Retrieval-Augmented Generation (RAG) significantly altered agent performance. We contrast the "Baseline" (Zero-shot) performance against the "RAG-Augmented" configuration.
+
+\subsection{Chat Agent: The Verbosity Penalty}
+In conversational Q\&A, our results indicate that RAG can occasionally decrease the evaluation score. This phenomenon, termed the ``verbosity penalty,'' occurs when the model incorporates excessive procedural data from the playbook that was not explicitly requested.
+
+\begin{table}[htbp]
+\centering
+\caption{Chat Agent Comparison (Query: ``What is a ransomware note?'')}
+\label{tab:chat_comparison}
+\small
+\begin{tabular}{@{} l p{3.5cm} p{3.5cm} @{}}
+\toprule
+\textbf{Feature} & \textbf{Baseline (No RAG)} & \textbf{RAG-Augmented} \\ \midrule
+\textbf{Validation Criteria} & \multicolumn{2}{p{7.3cm}}{Directness, accuracy, and avoidance of unnecessary remediation advice.} \\ \addlinespace
+\textbf{Expected Answer} & \multicolumn{2}{p{7.3cm}}{A message left by attackers stating files are encrypted and providing payment instructions.} \\ \addlinespace
+\textbf{Actual Answer} & Provides a concise and accurate definition of a ransomware note and typical delivery methods. & Provides the definition but follows with the entire SOC ransomware workflow and recovery steps. \\ \addlinespace
+\textbf{Validation Comment} & ``Direct, accurate, and context-aware answer with no unnecessary guidance.'' & ``Response is more detailed than necessary... drifts into unrelated remediation advice.'' \\ \addlinespace
+\textbf{Score} & \textbf{1.0} & \textbf{0.3} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Analysis:} As seen in Table \ref{tab:chat_comparison}, the score dropped because the model attempted to be overly helpful with the retrieved context. The judge (Ministral-3) penalized the response for failing the ``conciseness'' and ``relevance'' criteria, highlighting that for simple definitions, RAG can introduce noise.
+
+\subsection{Action Agent: Mandatory Technical Grounding}
+For technical execution, RAG is not merely an improvement but a requirement. Without it, the model lacks the schema knowledge required to produce machine-readable outputs.
+
+\begin{table}[htbp]
+\centering
+\caption{Action Agent Comparison (Query: ``Blacklist IP 185.23.44.9'')}
+\label{tab:action_comparison}
+\small
+\begin{tabular}{@{} l p{3.5cm} p{3.5cm} @{}}
+\toprule
+\textbf{Feature} & \textbf{Baseline (No RAG)} & \textbf{RAG-Augmented} \\ \midrule
+\textbf{Validation Criteria} & \multicolumn{2}{p{7.3cm}}{Correct action extraction, valid JSON syntax, and proper parameter mapping.} \\ \addlinespace
+\textbf{Expected Answer} & \multicolumn{2}{p{7.3cm}}{\texttt{\{"action": "blacklist\_ip", "params": \{"ip": "185.23.44.9"\}\}}} \\ \addlinespace
+\textbf{Actual Answer} & ``I'm sorry, I can't assist with that request. Please contact your administrator.'' & \texttt{\{"action": "blacklist\_ip", "params": \{"ip": "185.23.44.9"\}, ...\}} \\ \addlinespace
+\textbf{Validation Comment} & ``Agent failed to return a valid machine-readable response or identify the action.'' & ``Successfully extracted action and parameters based on retrieved playbook context.'' \\ \addlinespace
+\textbf{Score} & \textbf{0.0} & \textbf{0.31 (Avg)} \\ \bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Analysis:} Table \ref{tab:action_comparison} demonstrates the critical role of grounding. In the baseline configuration, the model has no knowledge of the \texttt{blacklist\_ip} function or the required JSON structure. While the RAG score of 0.31 indicates that the models still struggle with perfect JSON consistency, it represents a transition from zero utility to a functional state capable of being parsed by security orchestration tools.
 
 \section{Limitations and Future Work}\label{sec:limitations}
 
